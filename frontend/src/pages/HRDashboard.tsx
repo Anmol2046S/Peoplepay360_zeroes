@@ -8,7 +8,7 @@ import {
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-import { fetchDashboardMetrics, loginDevUser } from '../lib/api';
+import { fetchDashboardMetrics } from '../lib/api';
 
 /* ── Animation variants ─────────────────────────────────── */
 const page: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
@@ -114,7 +114,6 @@ const HRDashboard = () => {
   useEffect(() => {
     (async () => {
       try {
-        if (!localStorage.getItem('token')) await loginDevUser();
         setData(await fetchDashboardMetrics());
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
