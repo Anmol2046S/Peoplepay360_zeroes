@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import {
-  Search, Plus, Filter, Download, ChevronRight,
+  Search, Plus, Download, ChevronRight,
   Users, UserCheck, UserMinus, Loader2,
 } from 'lucide-react';
 import { api } from '../../lib/api';

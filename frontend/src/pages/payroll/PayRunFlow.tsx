@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CheckCircle2, ArrowRight, ArrowLeft, Download, X, AlertTriangle, Users, DollarSign, Loader2
+  CheckCircle2, ArrowRight, ArrowLeft, X, AlertTriangle, Users, DollarSign, Loader2
 } from 'lucide-react';
 
 export default function PayRunFlow() {

@@ -4,7 +4,6 @@ import {
   Calculator, FileText, CheckSquare, Settings, LogOut,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import type { Role } from '../contexts/AuthContext';

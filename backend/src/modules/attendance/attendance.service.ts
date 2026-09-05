@@ -1,14 +1,21 @@
 import { prisma } from '../../database/db';
 import { CheckInInput, CheckOutInput } from './attendance.schema';
-import { NotFoundError, DuplicateResourceError, ValidationError } from '../../shared/errors';
+import { NotFoundError } from '../../shared/errors';
 import { Decimal } from 'decimal.js';
 
 export class AttendanceService {
-  async checkIn(orgId: string, input: CheckInInput) {
+  async checkIn(orgId: string, input: CheckInInput, requestUserId?: string) {
     const employee = await prisma.employee.findFirst({
-      where: { id: input.employeeId, orgId },
+      where: {
+        orgId,
+        OR: [
+          { id: input.employeeId },
+          { userId: input.employeeId },
+          ...(requestUserId ? [{ userId: requestUserId }] : [])
+        ]
+      },
     });
-    if (!employee) throw new NotFoundError('Employee not found');
+    if (!employee) throw new NotFoundError('Employee record not found for current user session');
 
     const date = new Date(input.date);
     date.setUTCHours(0, 0, 0, 0); // Normalize to date boundaries
@@ -16,19 +23,30 @@ export class AttendanceService {
     const existing = await prisma.attendance.findUnique({
       where: {
         employeeId_date: {
-          employeeId: input.employeeId,
+          employeeId: employee.id,
           date,
         },
       },
     });
 
     if (existing) {
-      throw new DuplicateResourceError('Attendance record already exists for this date');
+      if (!existing.checkOut) {
+        return existing;
+      }
+      return prisma.attendance.update({
+        where: { id: existing.id },
+        data: {
+          checkIn: new Date(input.checkIn),
+          checkOut: null,
+          workedHours: new Decimal(0),
+          status: 'PRESENT',
+        },
+      });
     }
 
     return prisma.attendance.create({
       data: {
-        employeeId: input.employeeId,
+        employeeId: employee.id,
         date,
         checkIn: new Date(input.checkIn),
         status: 'PRESENT',
@@ -46,17 +64,8 @@ export class AttendanceService {
       throw new NotFoundError('Attendance record not found');
     }
 
-    if (record.checkOut) {
-      throw new ValidationError('Already checked out');
-    }
-
     const checkOut = new Date(input.checkOut);
-    if (checkOut <= record.checkIn) {
-      throw new ValidationError('Checkout time must be after check-in time');
-    }
-
-    // Calculate duration in hours
-    const durationMs = checkOut.getTime() - record.checkIn.getTime();
+    const durationMs = Math.max(0, checkOut.getTime() - record.checkIn.getTime());
     const hours = new Decimal(durationMs).dividedBy(1000 * 60 * 60).toDecimalPlaces(2);
 
     return prisma.attendance.update({

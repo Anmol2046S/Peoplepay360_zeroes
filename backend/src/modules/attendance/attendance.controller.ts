@@ -10,12 +10,19 @@ export class AttendanceController {
   }
 
   checkIn = async (request: FastifyRequest, reply: FastifyReply) => {
-    const input = CheckInSchema.parse(request.body);
+    const body = (request.body || {}) as Record<string, unknown>;
+    const employeeId = (body.employeeId as string) || request.user?.id || '';
+    const date = (body.date as string) || new Date().toISOString();
+    const checkInTime = (body.checkIn as string) || new Date().toISOString();
+
+    const input = CheckInSchema.parse({
+      employeeId,
+      date,
+      checkIn: checkInTime,
+    });
     const orgId = request.user!.orgId;
     
-    // In a real app, an employee role should only be able to check-in for themselves.
-    // Assuming higher roles can create for anyone.
-    const result = await this.attendanceService.checkIn(orgId, input);
+    const result = await this.attendanceService.checkIn(orgId, input, request.user!.id);
     return reply.status(201).send({ success: true, data: result });
   };
 

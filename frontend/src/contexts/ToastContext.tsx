@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface Toast {
   id: number;
@@ -44,6 +44,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               {t.type === 'success' && <CheckCircle2 size={18} className="text-emerald-400 dark:text-emerald-500" />}
               {t.type === 'error' && <AlertCircle size={18} className="text-red-400 dark:text-red-500" />}
               {t.type === 'info' && <Info size={18} className="text-blue-400 dark:text-blue-500" />}
+              {t.type === 'warning' && <AlertCircle size={18} className="text-amber-400 dark:text-amber-500" />}
               <p className="text-sm font-medium flex-1">{t.message}</p>
               <button 
                 onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Moon, Sun, X, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
 
 const notifications = [
   { id: 1, type: 'success', title: 'August payroll processed',      desc: '234 employees paid successfully.',       time: '2m ago',  unread: true  },

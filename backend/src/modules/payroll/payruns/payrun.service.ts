@@ -23,7 +23,6 @@ export class PayrunService {
           periodStart,
           periodEnd,
           status: 'DRAFT',
-          createdBy,
         },
       });
 
@@ -51,9 +50,7 @@ export class PayrunService {
       const payrunEmployeesData = eligibleContracts.map((contract) => ({
         payrunId: payrun.id,
         employeeId: contract.employeeId,
-        contractId: contract.id,
-        structureId: contract.salaryStructureId,
-        status: 'DRAFT', // using generic string for now, mapped in schema
+        status: 'DRAFT',
       }));
 
       await tx.payrunEmployee.createMany({
@@ -72,7 +69,7 @@ export class PayrunService {
       where: { id, orgId },
       include: {
         employees: {
-          include: { employee: true, contract: true }
+          include: { employee: { include: { contracts: true } } }
         }
       },
     });
@@ -107,7 +104,7 @@ export class PayrunService {
     }
     const updated = await prisma.payrun.update({
       where: { id },
-      data: { status: 'APPROVED', approvedBy },
+      data: { status: 'APPROVED' },
     });
     
     await logAudit({

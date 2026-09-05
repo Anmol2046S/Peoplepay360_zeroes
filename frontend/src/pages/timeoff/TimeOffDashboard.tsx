@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import {
-  Calendar as CalendarIcon, Clock, CheckCircle2, XCircle,
-  Filter, Search, ChevronRight, UserMinus, FileText, CalendarOff, X
+  Calendar as CalendarIcon, Clock,
+  UserMinus, X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';

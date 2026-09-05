@@ -13,8 +13,6 @@ import Reports from './pages/Reports';
 import Approvals from './pages/Approvals';
 import Settings from './pages/Settings';
 import { useAuth } from './contexts/AuthContext';
-import { useToast } from './contexts/ToastContext';
-import { useEffect } from 'react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();

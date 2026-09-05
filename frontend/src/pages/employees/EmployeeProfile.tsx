@@ -4,9 +4,8 @@ import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar,
-  CreditCard, FileText, ChevronRight, Download, Clock, Users
+  CreditCard, FileText, Download, Users
 } from 'lucide-react';
-import { api } from '../../lib/api';
 
 /* ── Animation variants ─────────────────────────────────── */
 const page: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };

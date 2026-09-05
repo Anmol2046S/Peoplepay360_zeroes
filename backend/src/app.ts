@@ -36,8 +36,14 @@ const buildApp = async () => {
   app.setErrorHandler(errorHandler);
 
   // Register plugins
-  await app.register(cors);
-  await app.register(helmet);
+  await app.register(cors, {
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  });
+  await app.register(helmet, {
+    crossOriginResourcePolicy: false,
+  });
   await app.register(rateLimit, {
     max: 100, // 100 requests per minute
     timeWindow: '1 minute',
@@ -59,27 +65,43 @@ const buildApp = async () => {
 
   // API routes
   app.register(async (api) => {
-    // DEV ONLY: Generate a token for Sarah Admin to bypass login on frontend
+    // DEV ONLY: Generate a token for requested role or default to Super Admin
     api.get('/dev/token', async (request, reply) => {
-      const adminUser = await prisma.user.findFirst({
-        where: { role: { name: 'SUPER_ADMIN' } },
+      const query = request.query as { role?: string };
+      const requestedRole = query?.role?.toUpperCase();
+
+      let targetRoleName = 'SUPER_ADMIN';
+      if (requestedRole === 'EMPLOYEE') {
+        targetRoleName = 'EMPLOYEE';
+      } else if (requestedRole === 'HR') {
+        targetRoleName = 'HR_MANAGER';
+      }
+
+      let user = await prisma.user.findFirst({
+        where: { role: { name: targetRoleName } },
         include: { role: true }
       });
 
-      if (!adminUser) {
-        return reply.code(404).send({ error: 'Super Admin not found in DB. Did you run the seed?' });
+      if (!user) {
+        user = await prisma.user.findFirst({
+          include: { role: true }
+        });
+      }
+
+      if (!user) {
+        return reply.code(404).send({ error: 'No user found in DB. Did you run the seed?' });
       }
 
       const secret = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
       const token = jwt.sign({
-        id: adminUser.id,
-        orgId: adminUser.orgId,
-        email: adminUser.email,
-        roleId: adminUser.roleId,
-        permissions: adminUser.role.permissions
+        id: user.id,
+        orgId: user.orgId,
+        email: user.email,
+        roleId: user.roleId,
+        permissions: user.role.permissions
       }, secret, { expiresIn: '1d' });
 
-      return { token, user: { email: adminUser.email, name: 'Sarah Admin' } };
+      return { token, user: { email: user.email, name: (user as any).name || user.email.split('@')[0] || 'Demo User' } };
     });
 
     api.register(authRoutes, { prefix: '/auth' });

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { User, Bell, Shield, Building, CreditCard, ChevronRight } from 'lucide-react';
+import { User, Bell, Shield, Building, CreditCard } from 'lucide-react';
 
 export default function Settings() {
   const sections = [

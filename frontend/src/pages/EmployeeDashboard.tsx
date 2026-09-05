@@ -4,6 +4,7 @@ import { Clock, Calendar, FileText, Download, ArrowRight, Play, Square, Wallet, 
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { useToast } from '../contexts/ToastContext';
+import { api } from '../lib/api';
 
 const page: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
 const card: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };

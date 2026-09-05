@@ -10,9 +10,12 @@ export class EngineService {
       include: {
         employees: {
           include: {
-            employee: true,
-            contract: {
-              include: { workingSchedules: true },
+            employee: {
+              include: {
+                contracts: {
+                  include: { workingSchedules: true },
+                },
+              },
             },
           },
         },

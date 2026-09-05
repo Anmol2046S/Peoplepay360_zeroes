@@ -16,11 +16,11 @@ export const logAudit = async (payload: AuditLogPayload) => {
     await prisma.auditLog.create({
       data: {
         orgId: payload.orgId,
-        userId: payload.userId,
+        actorId: payload.userId,
         action: payload.action,
         entity: payload.entity,
         entityId: payload.entityId,
-        metadata: payload.metadata || {},
+        metadata: JSON.stringify(payload.metadata || {}),
       },
     });
   } catch (error) {

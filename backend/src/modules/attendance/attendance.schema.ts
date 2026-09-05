@@ -1,13 +1,15 @@
 import z from 'zod';
 
+const dateSchema = z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date string' }).or(z.date());
+
 export const CheckInSchema = z.object({
   employeeId: z.string().min(1),
-  date: z.string().datetime().or(z.date()), // Logical date of the shift
-  checkIn: z.string().datetime().or(z.date()), // Actual time
+  date: dateSchema,
+  checkIn: dateSchema,
 });
 
 export const CheckOutSchema = z.object({
-  checkOut: z.string().datetime().or(z.date()), // Actual time
+  checkOut: dateSchema,
 });
 
 export type CheckInInput = z.infer<typeof CheckInSchema>;
