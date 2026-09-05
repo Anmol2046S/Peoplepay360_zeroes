@@ -1,0 +1,45 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App.tsx';
+import { ThemeProvider } from './contexts/ThemeContext.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import { ToastProvider } from './contexts/ToastContext.tsx';
+import './index.css';
+
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: any) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error: any) { return { hasError: true, error }; }
+  componentDidCatch(error: any, errorInfo: any) { console.error('Caught by ErrorBoundary:', error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '2rem', color: 'red', fontFamily: 'monospace' }}>
+          <h2>Something went wrong.</h2>
+          <pre style={{ background: '#f5f5f5', padding: '1rem', overflow: 'auto' }}>
+            {this.state.error?.toString()}
+            {'\n\n'}
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ThemeProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
