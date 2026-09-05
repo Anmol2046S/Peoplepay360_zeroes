@@ -11,11 +11,13 @@ import { TimeOffRequest } from '../types';
 
 export const TimeOffRequestsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
+  const { user, hasRole } = useAuth();
   const { showSuccess, showError } = useNotification();
   const [requests, setRequests] = useState<TimeOffRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchRequests();
@@ -126,20 +128,33 @@ export const TimeOffRequestsPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Actions',
-      render: (item) => (
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-          {item.status === 'TO_APPROVE' && hasRole('HR_MANAGER', 'HR_PAYROLL_MANAGER', 'ADMIN') && (
-            <>
-              <Button size="sm" variant="success" icon={<CheckCircle2 size={14} />} onClick={(e) => handleApprove(item.id, e)}>
-                Approve
-              </Button>
-              <Button size="sm" variant="danger" icon={<XCircle size={14} />} onClick={(e) => handleRefuse(item.id, e)}>
-                Refuse
-              </Button>
-            </>
-          )}
-        </div>
-      ),
+      render: (item) => {
+        const isSelfRequest = !!(user?.employeeId && item.employeeId === user.employeeId);
+
+        if (item.status === 'TO_APPROVE') {
+          if (isSelfRequest) {
+            return (
+              <span className="badge badge-warning" style={{ fontSize: 11 }} title="Seniority Guard: Users cannot approve their own leave request">
+                Self Request (Self-Approve Disabled)
+              </span>
+            );
+          }
+
+          if (hasRole('HR_MANAGER', 'HR_PAYROLL_MANAGER') && !isAdmin) {
+            return (
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <Button size="sm" variant="success" icon={<CheckCircle2 size={14} />} onClick={(e) => handleApprove(item.id, e)}>
+                  Approve
+                </Button>
+                <Button size="sm" variant="danger" icon={<XCircle size={14} />} onClick={(e) => handleRefuse(item.id, e)}>
+                  Refuse
+                </Button>
+              </div>
+            );
+          }
+        }
+        return null;
+      },
     },
   ];
 
@@ -150,11 +165,13 @@ export const TimeOffRequestsPage: React.FC = () => {
           <h1 className="page-title">Time Off Requests</h1>
           <p className="page-subtitle">Submit, track, and manage employee leave requests and approvals</p>
         </div>
-        <div className="page-header-right">
-          <Button icon={<Plus size={16} />} onClick={() => navigate('/time-off/requests/new')}>
-            New Request
-          </Button>
-        </div>
+        {!isAdmin && (
+          <div className="page-header-right">
+            <Button icon={<Plus size={16} />} onClick={() => navigate('/time-off/requests/new')}>
+              New Request
+            </Button>
+          </div>
+        )}
       </div>
 
       <div style={{ marginBottom: 20, display: 'flex', gap: 12 }}>

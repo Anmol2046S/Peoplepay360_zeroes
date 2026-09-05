@@ -62,33 +62,35 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
           <span>Back to Employees</span>
         </button>
 
-        {/* Smart Buttons Group (s6.png) */}
-        <div className="smart-buttons">
-          <SmartButton
-            icon={<FileText size={15} />}
-            label="Contracts"
-            count={smartCounts.contracts}
-            onClick={() => navigate(`/hr/contracts?employeeId=${initialData.id || ''}`)}
-          />
-          <SmartButton
-            icon={<Clock size={15} />}
-            label="Attendance"
-            count={smartCounts.attendance}
-            onClick={() => navigate(`/hr/attendance?employeeId=${initialData.id || ''}`)}
-          />
-          <SmartButton
-            icon={<Calendar size={15} />}
-            label="Time Off"
-            count={smartCounts.timeOff}
-            onClick={() => navigate(`/time-off/requests?employeeId=${initialData.id || ''}`)}
-          />
-          <SmartButton
-            icon={<CheckSquare size={15} />}
-            label="Allocations"
-            count={smartCounts.allocations}
-            onClick={() => navigate(`/time-off/allocations?employeeId=${initialData.id || ''}`)}
-          />
-        </div>
+        {/* Smart Buttons Group (Only show for existing employee) */}
+        {initialData?.id && initialData.id !== 'new' && (
+          <div className="smart-buttons">
+            <SmartButton
+              icon={<FileText size={15} />}
+              label="Contracts"
+              count={smartCounts.contracts}
+              onClick={() => navigate(`/hr/contracts?employeeId=${initialData.id || ''}`)}
+            />
+            <SmartButton
+              icon={<Clock size={15} />}
+              label="Attendance"
+              count={smartCounts.attendance}
+              onClick={() => navigate(`/hr/attendance?employeeId=${initialData.id || ''}`)}
+            />
+            <SmartButton
+              icon={<Calendar size={15} />}
+              label="Time Off"
+              count={smartCounts.timeOff}
+              onClick={() => navigate(`/time-off/requests?employeeId=${initialData.id || ''}`)}
+            />
+            <SmartButton
+              icon={<CheckSquare size={15} />}
+              label="Allocations"
+              count={smartCounts.allocations}
+              onClick={() => navigate(`/time-off/allocations?employeeId=${initialData.id || ''}`)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Main Header Form Card */}

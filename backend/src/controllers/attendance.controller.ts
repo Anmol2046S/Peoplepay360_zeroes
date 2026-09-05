@@ -29,7 +29,7 @@ export class AttendanceController {
   static async getActiveSession(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user?.employeeId) {
-        throw new AppError('User is not linked to an employee record.', 400, 'NO_EMPLOYEE_LINK');
+        return sendSuccess(res, null, 'No linked employee profile for active session');
       }
       const active = await AttendanceService.getActiveSession(req.user.employeeId);
       return sendSuccess(res, active, 'Active session status fetched');

@@ -93,4 +93,23 @@ export class UserService {
 
     return updated;
   }
+
+  static async resetPassword(id: string, newPasswordStr: string) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new AppError('User not found.', 404, 'USER_NOT_FOUND');
+    }
+
+    if (!newPasswordStr || newPasswordStr.length < 6) {
+      throw new AppError('Password must be at least 6 characters long.', 400, 'INVALID_PASSWORD');
+    }
+
+    const passwordHash = await bcrypt.hash(newPasswordStr, 10);
+    await prisma.user.update({
+      where: { id },
+      data: { passwordHash },
+    });
+
+    return { id: user.id, email: user.email };
+  }
 }

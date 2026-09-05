@@ -135,7 +135,28 @@ export const AttendanceWidget: React.FC<AttendanceWidgetProps> = ({ isOpen, onCl
           Welcome back, <strong style={{ color: 'var(--text-primary)' }}>{user?.name || 'Employee'}</strong>
         </p>
 
-        {isCheckedIn ? (
+        {!user?.employeeId ? (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '12px 0 16px 0' }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: 'var(--color-warning)', display: 'inline-block' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>Administrative Account</span>
+            </div>
+
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
+              This is a standalone administrative user account without a linked employee record. Punch clock is active for linked employee profiles.
+            </p>
+
+            <button
+              disabled
+              className="btn btn-secondary btn-lg"
+              style={{ width: '100%', justifyContent: 'center', opacity: 0.65, cursor: 'not-allowed' }}
+              type="button"
+            >
+              <Clock size={16} />
+              <span>Punch Clock Disabled</span>
+            </button>
+          </div>
+        ) : isCheckedIn ? (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '12px 0 16px 0' }}>
               <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: 'var(--color-success)', display: 'inline-block' }} />

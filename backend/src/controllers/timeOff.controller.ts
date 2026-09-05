@@ -89,7 +89,7 @@ export class TimeOffController {
     try {
       const id = req.params.id;
       const approverName = req.user?.name || 'Manager';
-      const approved = await TimeOffService.approveRequest(id, approverName);
+      const approved = await TimeOffService.approveRequest(id, approverName, req.user?.employeeId, req.user?.id);
       return sendSuccess(res, approved, 'Leave request approved and balance updated successfully');
     } catch (err) {
       next(err);

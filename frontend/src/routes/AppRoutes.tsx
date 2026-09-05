@@ -14,6 +14,7 @@ import WorkingScheduleListPage from '../pages/WorkingScheduleListPage';
 import WorkingScheduleFormPage from '../pages/WorkingScheduleFormPage';
 import AttendanceListPage from '../pages/AttendanceListPage';
 import AttendanceFormPage from '../pages/AttendanceFormPage';
+import TimeOffHub from '../pages/TimeOffHub';
 import TimeOffRequestsPage from '../pages/TimeOffRequestsPage';
 import TimeOffRequestFormPage from '../pages/TimeOffRequestFormPage';
 import TimeOffAllocationsPage from '../pages/TimeOffAllocationsPage';
@@ -61,6 +62,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/hr/attendance/:id" element={<AttendanceFormPage />} />
 
           {/* Time Off */}
+          <Route path="/time-off" element={<TimeOffHub />} />
           <Route path="/time-off/requests" element={<TimeOffRequestsPage />} />
           <Route path="/time-off/requests/:id" element={<TimeOffRequestFormPage />} />
           <Route path="/time-off/allocations" element={<TimeOffAllocationsPage />} />

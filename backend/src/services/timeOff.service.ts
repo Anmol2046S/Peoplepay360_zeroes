@@ -129,14 +129,19 @@ export class TimeOffService {
     return request;
   }
 
-  static async approveRequest(requestId: string, approverName: string) {
+  static async approveRequest(requestId: string, approverName: string, approverEmployeeId?: string | null, approverUserId?: string | null) {
     const request = await prisma.timeOffRequest.findUnique({
       where: { id: requestId },
-      include: { timeOffType: true, allocation: true },
+      include: { timeOffType: true, allocation: true, employee: true },
     });
 
     if (!request) {
       throw new AppError('Time off request not found.', 404, 'REQUEST_NOT_FOUND');
+    }
+
+    // Seniority Guard: Self-approval check
+    if (approverEmployeeId && request.employeeId === approverEmployeeId) {
+      throw new AppError('Seniority Guard: You cannot approve your own time off request.', 400, 'SELF_APPROVAL_FORBIDDEN');
     }
 
     if (request.status === TimeOffRequestStatus.APPROVED) {

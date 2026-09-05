@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { Clock, Bell, LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { AttendanceWidget } from '../attendance/AttendanceWidget';
+import { NotificationDrawer } from './NotificationDrawer';
 
 interface HeaderProps {
   onToggleMobileSidebar?: () => void;
@@ -12,10 +13,16 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileSidebar }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const pathParts = location.pathname.split('/').filter(Boolean);
-  const breadcrumbs = pathParts.map((part) => part.charAt(0).toUpperCase() + part.slice(1));
+
+  const formatBreadcrumbText = (part: string) => {
+    if (part.toLowerCase() === 'hr') return 'HR';
+    if (part.toLowerCase() === 'payroll') return 'Payroll';
+    return part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
+  };
 
   return (
     <header className="header" style={{ position: 'relative' }}>
@@ -30,25 +37,34 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileSidebar }) => {
       </button>
 
       <div className="header-breadcrumb">
-        <span className="header-breadcrumb-item">PeoplePay360</span>
-        {breadcrumbs.map((crumb, idx) => (
-          <React.Fragment key={idx}>
-            <span className="header-breadcrumb-sep">/</span>
-            <span
-              className={`header-breadcrumb-item ${
-                idx === breadcrumbs.length - 1 ? 'current' : ''
-              }`}
-            >
-              {crumb}
-            </span>
-          </React.Fragment>
-        ))}
+        <Link to="/dashboard" className="header-breadcrumb-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+          PeoplePay360
+        </Link>
+        {pathParts.map((part, idx) => {
+          const routeTo = `/${pathParts.slice(0, idx + 1).join('/')}`;
+          const isLast = idx === pathParts.length - 1;
+          return (
+            <React.Fragment key={routeTo}>
+              <span className="header-breadcrumb-sep">/</span>
+              {isLast ? (
+                <span className="header-breadcrumb-item current">{formatBreadcrumbText(part)}</span>
+              ) : (
+                <Link to={routeTo} className="header-breadcrumb-item" style={{ textDecoration: 'none' }}>
+                  {formatBreadcrumbText(part)}
+                </Link>
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       <div className="header-actions">
         <button
           className={`header-icon-btn ${isAttendanceOpen ? 'active' : ''}`}
-          onClick={() => setIsAttendanceOpen(!isAttendanceOpen)}
+          onClick={() => {
+            setIsAttendanceOpen(!isAttendanceOpen);
+            setIsNotificationsOpen(false);
+          }}
           title="Attendance Punch Clock"
           type="button"
         >
@@ -60,9 +76,34 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileSidebar }) => {
           onClose={() => setIsAttendanceOpen(false)}
         />
 
-        <button className="header-icon-btn" title="Notifications" type="button">
-          <Bell size={19} />
+        <button
+          className={`header-icon-btn ${isNotificationsOpen ? 'active' : ''}`}
+          onClick={() => {
+            setIsNotificationsOpen(!isNotificationsOpen);
+            setIsAttendanceOpen(false);
+          }}
+          title="Notifications"
+          type="button"
+          style={{ position: 'relative' }}
+        >
+          <Bell size={19} color={isNotificationsOpen ? 'var(--brand-primary)' : 'var(--text-secondary)'} />
+          <span
+            style={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: 'var(--brand-primary)',
+            }}
+          />
         </button>
+
+        <NotificationDrawer
+          isOpen={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
+        />
 
         <div style={{ position: 'relative' }}>
           <button

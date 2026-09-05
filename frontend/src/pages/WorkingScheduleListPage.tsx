@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Calendar, List } from 'lucide-react';
 import { Table, Column } from '../components/common/Table';
 import { Button } from '../components/common/Button';
 import { StatusBadge } from '../components/common/Badge';
+import { Tabs } from '../components/common/Tabs';
+import { ScheduleRoleView } from '../components/schedules/ScheduleRoleView';
 import { payrunService } from '../services/payrun.service';
 import { WorkingSchedule } from '../types';
 
 export const WorkingScheduleListPage: React.FC = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'schedules' | 'matrix'>('schedules');
   const [schedules, setSchedules] = useState<WorkingSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,7 +84,7 @@ export const WorkingScheduleListPage: React.FC = () => {
       <div className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">Working Schedules & Work Patterns</h1>
-          <p className="page-subtitle">Configure weekly working hours, start/end times, and shift breaks</p>
+          <p className="page-subtitle">Configure weekly working hours, shift timings, and view role assignment matrix</p>
         </div>
         <div className="page-header-right">
           <Button icon={<Plus size={16} />} onClick={() => navigate('/hr/schedules/new')}>
@@ -90,25 +93,40 @@ export const WorkingScheduleListPage: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ marginBottom: 20, display: 'flex', gap: 12 }}>
-        <div className="search-bar">
-          <Search size={16} className="search-bar-icon" />
-          <input
-            type="text"
-            placeholder="Search schedule name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <Table
-        columns={columns}
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        isLoading={isLoading}
-        onRowClick={(item) => navigate(`/hr/schedules/${item.id}`)}
+      <Tabs
+        tabs={[
+          { id: 'schedules', label: 'Working Schedules' },
+          { id: 'matrix', label: 'Role & Person Schedule Matrix' },
+        ]}
+        activeTab={activeTab}
+        onChange={(tab) => setActiveTab(tab as 'schedules' | 'matrix')}
       />
+
+      {activeTab === 'schedules' ? (
+        <>
+          <div style={{ marginBottom: 20, display: 'flex', gap: 12 }}>
+            <div className="search-bar">
+              <Search size={16} className="search-bar-icon" />
+              <input
+                type="text"
+                placeholder="Search schedule name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <Table
+            columns={columns}
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            isLoading={isLoading}
+            onRowClick={(item) => navigate(`/hr/schedules/${item.id}`)}
+          />
+        </>
+      ) : (
+        <ScheduleRoleView />
+      )}
     </div>
   );
 };

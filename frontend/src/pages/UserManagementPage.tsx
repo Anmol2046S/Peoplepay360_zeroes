@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { UserPlus, Search } from 'lucide-react';
+import { UserPlus, Search, Key } from 'lucide-react';
 import { Table, Column } from '../components/common/Table';
 import { Button } from '../components/common/Button';
 import { StatusBadge } from '../components/common/Badge';
 import { CreateUserModal } from '../components/users/CreateUserModal';
+import { ResetPasswordModal } from '../components/users/ResetPasswordModal';
 import { useNotification } from '../context/NotificationContext';
 import { payrunService } from '../services/payrun.service';
 import { employeeService } from '../services/employee.service';
@@ -17,6 +18,10 @@ export const UserManagementPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [selectedUserForReset, setSelectedUserForReset] = useState<User | null>(null);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -75,6 +80,23 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
+  const handleResetPassword = async (userId: string, newPassword: string) => {
+    setIsResetting(true);
+    try {
+      const res = await payrunService.resetUserPassword(userId, newPassword);
+      if (res.success) {
+        showSuccess('Password reset successfully!');
+        setIsResetModalOpen(false);
+        setSelectedUserForReset(null);
+      }
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: { message?: string } } } };
+      showError(errorObj.response?.data?.error?.message || 'Failed to reset password.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const filteredUsers = users.filter(
     (u) =>
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,6 +136,25 @@ export const UserManagementPage: React.FC = () => {
       header: 'Status',
       render: (item) => <StatusBadge status={item.status} />,
     },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (item) => (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<Key size={14} />}
+            onClick={() => {
+              setSelectedUserForReset(item);
+              setIsResetModalOpen(true);
+            }}
+          >
+            Reset Password
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -150,6 +191,17 @@ export const UserManagementPage: React.FC = () => {
         employees={employees}
         onCreate={handleCreateUser}
         isLoading={isSubmitting}
+      />
+
+      <ResetPasswordModal
+        isOpen={isResetModalOpen}
+        onClose={() => {
+          setIsResetModalOpen(false);
+          setSelectedUserForReset(null);
+        }}
+        user={selectedUserForReset}
+        onReset={handleResetPassword}
+        isLoading={isResetting}
       />
     </div>
   );

@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Eye } from 'lucide-react';
 import { AttendanceTable } from '../components/attendance/AttendanceTable';
 import { attendanceService } from '../services/attendance.service';
+import { useAuth } from '../context/AuthContext';
 import { Attendance } from '../types';
 
 export const AttendanceListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchAttendance();
@@ -54,6 +58,26 @@ export const AttendanceListPage: React.FC = () => {
           <h1 className="page-title">Daily Attendance Logs</h1>
           <p className="page-subtitle">Track real-time check-in, check-out, worked hours, and overtime records</p>
         </div>
+        {isAdmin && (
+          <div className="page-header-right">
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                color: 'var(--brand-primary)',
+                borderRadius: 'var(--border-radius-md)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              <Eye size={15} />
+              <span>Admin Observer Mode (Read-Only)</span>
+            </span>
+          </div>
+        )}
       </div>
 
       <div style={{ marginBottom: 20, display: 'flex', gap: 12 }}>
@@ -71,7 +95,7 @@ export const AttendanceListPage: React.FC = () => {
       <AttendanceTable
         attendances={filtered}
         isLoading={isLoading}
-        onRowClick={(item) => navigate(`/hr/attendance/${item.id}`)}
+        onRowClick={isAdmin ? undefined : (item) => navigate(`/hr/attendance/${item.id}`)}
       />
     </div>
   );

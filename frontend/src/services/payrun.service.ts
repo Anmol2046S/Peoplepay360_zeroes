@@ -157,6 +157,10 @@ export const payrunService = {
     const { data } = await apiClient.put<ApiResponse<User>>(`/users/${id}`, payload);
     return data;
   },
+  async resetUserPassword(id: string, newPassword: string): Promise<ApiResponse<{ message: string }>> {
+    const { data } = await apiClient.post<ApiResponse<{ message: string }>>(`/users/${id}/reset-password`, { newPassword });
+    return data;
+  },
 
   // Departments
   async listDepartments() {

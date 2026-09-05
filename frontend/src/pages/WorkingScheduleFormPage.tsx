@@ -11,9 +11,11 @@ export const WorkingScheduleFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
 
+  const isNew = !id || id === 'new';
+
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<WorkingSchedule>>({
-    name: 'Standard 40 Hours/Week',
+    name: isNew ? '' : 'Standard 40 Hours/Week',
     company: 'My Company',
     daysPerWeek: 5,
     hoursPerWeek: 40.0,
@@ -29,10 +31,10 @@ export const WorkingScheduleFormPage: React.FC = () => {
   });
 
   useEffect(() => {
-    if (id && id !== 'new') {
+    if (!isNew) {
       fetchSchedule();
     }
-  }, [id]);
+  }, [id, isNew]);
 
   const fetchSchedule = async () => {
     try {
