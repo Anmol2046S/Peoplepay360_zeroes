@@ -4,25 +4,118 @@ import { Clock, Bell, LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { AttendanceWidget } from '../attendance/AttendanceWidget';
 import { NotificationDrawer } from './NotificationDrawer';
+import type { SystemRole } from '../../types';
 
 interface HeaderProps {
   onToggleMobileSidebar?: () => void;
 }
 
+interface BreadcrumbItem {
+  key: string;
+  label: string;
+  to?: string;
+  isCurrent: boolean;
+}
+
+const buildRoleAwareBreadcrumbs = (
+  pathname: string,
+  hasRole: (...roles: SystemRole[]) => boolean
+): BreadcrumbItem[] => {
+  const pathParts = pathname.split('/').filter(Boolean);
+  if (pathParts.length === 0) return [];
+
+  const items: BreadcrumbItem[] = [];
+
+  const isRouteAccessible = (path: string): boolean => {
+    if (path === '/dashboard') return true;
+    if (path === '/hr/employees' || path.startsWith('/hr/employees/')) return true;
+    if (path === '/hr/schedules' || path.startsWith('/hr/schedules/')) return true;
+    if (path === '/hr/attendance' || path.startsWith('/hr/attendance/')) return true;
+    if (
+      path === '/time-off' ||
+      path === '/time-off/requests' ||
+      path.startsWith('/time-off/requests/') ||
+      path === '/time-off/allocations' ||
+      path.startsWith('/time-off/allocations/')
+    ) {
+      return true;
+    }
+
+    if (path === '/hr/contracts' || path.startsWith('/hr/contracts/')) {
+      return hasRole('HR_MANAGER', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'ADMIN');
+    }
+    if (path === '/time-off/types' || path.startsWith('/time-off/types/')) {
+      return hasRole('HR_MANAGER', 'HR_PAYROLL_MANAGER', 'ADMIN');
+    }
+    if (path.startsWith('/payroll/payruns') || path.startsWith('/payroll/payslips')) {
+      return hasRole('HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'ADMIN');
+    }
+    if (path.startsWith('/payroll/structures') || path.startsWith('/payroll/rules')) {
+      return hasRole('HR_PAYROLL_MANAGER', 'ADMIN');
+    }
+    if (path.startsWith('/admin')) {
+      return hasRole('ADMIN');
+    }
+    return false;
+  };
+
+  for (let i = 0; i < pathParts.length; i++) {
+    const part = pathParts[i];
+    const isLast = i === pathParts.length - 1;
+    const currentSubpath = `/${pathParts.slice(0, i + 1).join('/')}`;
+
+    let label = part;
+    let targetUrl: string | undefined = currentSubpath;
+
+    if (part.toLowerCase() === 'hr') {
+      label = 'HR';
+      targetUrl = '/hr/employees';
+    } else if (part.toLowerCase() === 'payroll') {
+      label = 'Payroll';
+      targetUrl = hasRole('HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'ADMIN')
+        ? '/payroll/payruns'
+        : undefined;
+    } else if (part.toLowerCase() === 'time-off') {
+      label = 'Time Off';
+      targetUrl = '/time-off';
+    } else if (part.toLowerCase() === 'admin') {
+      label = 'Administration';
+      targetUrl = hasRole('ADMIN') ? '/admin/users' : undefined;
+    } else if (part.toLowerCase() === 'new') {
+      label = 'New Record';
+    } else if (i === pathParts.length - 1 && part.length > 6 && (/[0-9]/.test(part) || part.includes('-'))) {
+      label = 'Details';
+    } else {
+      label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
+    }
+
+    if (targetUrl && !isRouteAccessible(targetUrl)) {
+      targetUrl = undefined;
+    }
+
+    if (isLast) {
+      targetUrl = undefined;
+    }
+
+    items.push({
+      key: `${currentSubpath}-${i}`,
+      label,
+      to: targetUrl,
+      isCurrent: isLast,
+    });
+  }
+
+  return items;
+};
+
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileSidebar }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const location = useLocation();
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const pathParts = location.pathname.split('/').filter(Boolean);
-
-  const formatBreadcrumbText = (part: string) => {
-    if (part.toLowerCase() === 'hr') return 'HR';
-    if (part.toLowerCase() === 'payroll') return 'Payroll';
-    return part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
-  };
+  const breadcrumbs = buildRoleAwareBreadcrumbs(location.pathname, hasRole);
 
   return (
     <header className="header" style={{ position: 'relative' }}>
@@ -40,22 +133,22 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileSidebar }) => {
         <Link to="/dashboard" className="header-breadcrumb-item" style={{ textDecoration: 'none', color: 'inherit' }}>
           PeoplePay360
         </Link>
-        {pathParts.map((part, idx) => {
-          const routeTo = `/${pathParts.slice(0, idx + 1).join('/')}`;
-          const isLast = idx === pathParts.length - 1;
-          return (
-            <React.Fragment key={routeTo}>
-              <span className="header-breadcrumb-sep">/</span>
-              {isLast ? (
-                <span className="header-breadcrumb-item current">{formatBreadcrumbText(part)}</span>
-              ) : (
-                <Link to={routeTo} className="header-breadcrumb-item" style={{ textDecoration: 'none' }}>
-                  {formatBreadcrumbText(part)}
-                </Link>
-              )}
-            </React.Fragment>
-          );
-        })}
+        {breadcrumbs.map((item) => (
+          <React.Fragment key={item.key}>
+            <span className="header-breadcrumb-sep">/</span>
+            {item.isCurrent ? (
+              <span className="header-breadcrumb-item current">{item.label}</span>
+            ) : item.to ? (
+              <Link to={item.to} className="header-breadcrumb-item" style={{ textDecoration: 'none' }}>
+                {item.label}
+              </Link>
+            ) : (
+              <span className="header-breadcrumb-item" style={{ color: 'var(--text-muted)', opacity: 0.75 }}>
+                {item.label}
+              </span>
+            )}
+          </React.Fragment>
+        ))}
       </div>
 
       <div className="header-actions">
