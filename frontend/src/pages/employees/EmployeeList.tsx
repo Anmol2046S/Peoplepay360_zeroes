@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useToast } from '../../contexts/ToastContext';
+import AddEmployeeModal from '../../components/AddEmployeeModal';
 
 /* ── Types ─────────────────────────────────────────────── */
 interface Employee {
@@ -60,7 +61,7 @@ const page: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition:
 const row:  Variants = { hidden: { opacity: 0, x: -6 }, show: { opacity: 1, x: 0, transition: { duration: 0.22 } } };
 
 /* ── Component ─────────────────────────────────────────── */
-const DEPARTMENTS = ['All', 'Engineering', 'Human Resources', 'Product', 'Design', 'Finance', 'Analytics', 'Sales', 'Marketing'];
+const DEPARTMENTS = ['All', 'Engineering', 'Human Resources', 'Finance & Payroll', 'Product & Design', 'Sales & Marketing', 'Operations & Analytics', 'Executive'];
 const STATUSES    = ['All', 'Active', 'On Leave', 'Inactive'];
 
 const EmployeeList = () => {
@@ -70,13 +71,14 @@ const EmployeeList = () => {
   const [search,    setSearch]    = useState('');
   const [dept,      setDept]      = useState('All');
   const [status,    setStatus]    = useState('All');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await api.get('/employees');
-        const d = res.data?.employees ?? res.data;
-        setEmployees(Array.isArray(d) ? d : MOCK);
+        const raw = res.data?.data ?? res.data?.employees ?? (Array.isArray(res.data) ? res.data : []);
+        setEmployees(Array.isArray(raw) && raw.length > 0 ? raw : MOCK);
       } catch {
         setEmployees(MOCK);
       } finally {
@@ -113,7 +115,7 @@ const EmployeeList = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{employees.length} people in your organisation</p>
         </div>
         <button 
-          onClick={() => toast('Add Employee form will be available soon.', 'info')}
+          onClick={() => setIsAddModalOpen(true)}
           className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
         >
           <Plus size={15} strokeWidth={2.5} /> Add Employee
@@ -249,6 +251,12 @@ const EmployeeList = () => {
           </div>
         )}
       </motion.div>
+
+      <AddEmployeeModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={(emp) => setEmployees((prev) => [emp, ...prev])}
+      />
     </div>
   );
 };

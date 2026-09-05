@@ -6,6 +6,7 @@ export default async function attendanceRoutes(app: FastifyInstance) {
   const attendanceController = new AttendanceController();
 
   app.post('/', { preHandler: [requirePermission('ATTENDANCE_CREATE')] }, attendanceController.checkIn);
+  app.get('/', { preHandler: [requirePermission('ATTENDANCE_READ')] }, attendanceController.getAll);
   app.patch<{ Params: { id: string } }>('/:id/checkout', { preHandler: [requirePermission('ATTENDANCE_UPDATE')] }, attendanceController.checkOut);
   app.get<{ Params: { employeeId: string } }>('/employee/:employeeId', { preHandler: [requirePermission('ATTENDANCE_READ')] }, attendanceController.getByEmployee);
 }

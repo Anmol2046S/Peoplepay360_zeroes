@@ -29,11 +29,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 const container = document.getElementById('root')!;
-let root = (window as any).__reactRoot;
-if (!root) {
-  root = ReactDOM.createRoot(container);
-  (window as any).__reactRoot = root;
-}
+const root = ReactDOM.createRoot(container);
 
 root.render(
   <React.StrictMode>

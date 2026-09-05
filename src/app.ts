@@ -44,30 +44,132 @@ const buildApp = async () => {
 
   // Placeholder for API routes
   app.register(async (api) => {
-    // DEV ONLY: Generate a token for Sarah Admin to bypass login on frontend
+    // DEV ONLY: Generate a token for any requested demo role
     api.get('/dev/token', async (request, reply) => {
       const { prisma } = await import('./database/db');
       const jwt = (await import('jsonwebtoken')).default || (await import('jsonwebtoken'));
       
-      const adminUser = await prisma.user.findFirst({
-        where: { role: { name: 'SUPER_ADMIN' } },
-        include: { role: true }
+      const queryRole = String((request.query as any)?.role || 'ADMIN').toUpperCase();
+      const roleNameMap: Record<string, string> = {
+        ADMIN: 'SUPER_ADMIN',
+        SUPER_ADMIN: 'SUPER_ADMIN',
+        HR_MANAGER: 'HR_MANAGER',
+        HR_PAYROLL_MANAGER: 'HR_PAYROLL_MANAGER',
+        HR_PAYROLL_USER: 'HR_PAYROLL_USER',
+        EMPLOYEE: 'EMPLOYEE',
+      };
+      const targetRole = roleNameMap[queryRole] || 'SUPER_ADMIN';
+
+      let user = await prisma.user.findFirst({
+        where: targetRole === 'EMPLOYEE'
+          ? { email: 'employee@techcorp.com' }
+          : { role: { name: targetRole } },
+        include: { role: true, employees: true },
       });
 
-      if (!adminUser) {
-        return reply.code(404).send({ error: 'Super Admin not found in DB. Did you run the seed?' });
+      if (!user) {
+        user = await prisma.user.findFirst({
+          where: { role: { name: 'SUPER_ADMIN' } },
+          include: { role: true, employees: true },
+        });
       }
+
+      if (!user) {
+        return reply.code(404).send({ error: 'User not found in DB. Did you run the seed?' });
+      }
+
+      const emp = user.employees?.[0];
+      const userName = emp ? `${emp.firstName} ${emp.lastName}` : (user.email.split('@')[0]);
 
       const secret = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
       const token = jwt.sign({
-        id: adminUser.id,
-        orgId: adminUser.orgId,
-        email: adminUser.email,
-        roleId: adminUser.roleId,
-        permissions: adminUser.role.permissions
+        id: user.id,
+        orgId: user.orgId,
+        email: user.email,
+        roleId: user.roleId,
+        permissions: user.role.permissions || [],
       }, secret, { expiresIn: '1d' });
 
-      return { token, user: { email: adminUser.email, name: 'Sarah Admin' } };
+      return {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: userName,
+          role: user.role.name === 'SUPER_ADMIN' ? 'ADMIN' : user.role.name,
+          employeeId: emp?.id || null,
+        },
+      };
+    });
+
+    // Users & RBAC
+    api.get('/users', async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const users = await prisma.user.findMany({
+        include: { role: true, employees: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      const data = users.map((u) => {
+        const emp = u.employees?.[0];
+        return {
+          id: u.id,
+          name: emp ? `${emp.firstName} ${emp.lastName}` : u.email.split('@')[0],
+          email: u.email,
+          role: u.role.name === 'SUPER_ADMIN' ? 'ADMIN' : u.role.name,
+          status: u.status,
+          createdAt: u.createdAt.toISOString(),
+          employee: emp ? { firstName: emp.firstName, lastName: emp.lastName } : null,
+        };
+      });
+      return reply.send({ success: true, data });
+    });
+
+    api.post('/users', async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const bcrypt = (await import('bcryptjs')).default || (await import('bcryptjs'));
+      const body = request.body as any;
+      const org = await prisma.organization.findFirst();
+      if (!org) return reply.code(400).send({ success: false, error: { message: 'No org found' } });
+      
+      const roleObj = await prisma.role.findFirst({ where: { name: body.role || 'EMPLOYEE' } }) ||
+                      await prisma.role.findFirst();
+      const passwordHash = await bcrypt.hash(body.password || 'password123', 10);
+
+      const created = await prisma.user.create({
+        data: {
+          orgId: org.id,
+          roleId: roleObj!.id,
+          email: body.email,
+          passwordHash,
+          status: 'ACTIVE',
+        },
+        include: { role: true },
+      });
+
+      return reply.status(201).send({
+        success: true,
+        data: {
+          id: created.id,
+          name: body.name || created.email,
+          email: created.email,
+          role: created.role.name,
+          status: created.status,
+          createdAt: created.createdAt.toISOString(),
+        },
+      });
+    });
+
+    api.post<{ Params: { id: string } }>('/users/:id/reset-password', async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const bcrypt = (await import('bcryptjs')).default || (await import('bcryptjs'));
+      const { id } = request.params;
+      const { newPassword } = request.body as any;
+      const passwordHash = await bcrypt.hash(newPassword || 'password123', 10);
+      await prisma.user.update({
+        where: { id },
+        data: { passwordHash },
+      });
+      return reply.send({ success: true, message: 'Password reset successfully' });
     });
 
     const { default: authRoutes } = await import('./modules/auth/auth.routes');

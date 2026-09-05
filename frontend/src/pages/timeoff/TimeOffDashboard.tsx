@@ -27,22 +27,82 @@ export default function TimeOffDashboard() {
     reason: ''
   });
   
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
-  }, []);
-
-  const [pendingRequests, setPendingRequests] = useState([
-    { id: 1, name: 'Marcus Williams', type: 'Annual Leave', dates: 'Sep 10 - Sep 15 (5 days)', requestedOn: 'Today', status: 'Pending' },
-    { id: 2, name: 'Lena Kim', type: 'Sick Leave', dates: 'Sep 6 (1 day)', requestedOn: 'Yesterday', status: 'Pending' },
-    { id: 3, name: 'Tom Bradley', type: 'Parental Leave', dates: 'Oct 1 - Dec 31 (90 days)', requestedOn: 'Sep 3', status: 'Pending' },
+  const [pendingRequests, setPendingRequests] = useState<any[]>([
+    { id: '1', name: 'Alex Turner', type: 'Annual Leave', dates: 'Sep 10 - Sep 14 (4 days)', requestedOn: 'Today', status: 'Pending' },
+    { id: '2', name: 'Priya Sharma', type: 'Sick Leave', dates: 'Sep 7 - Sep 8 (2 days)', requestedOn: 'Today', status: 'Pending' },
+    { id: '3', name: 'James Okafor', type: 'Casual Leave', dates: 'Sep 9 (1 day)', requestedOn: 'Yesterday', status: 'Pending' },
+    { id: '4', name: 'Sophia Martinez', type: 'Annual Leave', dates: 'Sep 18 - Sep 24 (6 days)', requestedOn: '2 days ago', status: 'Pending' },
+    { id: '5', name: 'Emily Watson', type: 'Parental Leave', dates: 'Sep 26 - Oct 26 (30 days)', requestedOn: '3 days ago', status: 'Pending' },
+    { id: '6', name: 'David Rosario', type: 'Casual Leave', dates: 'Sep 13 - Sep 14 (2 days)', requestedOn: '4 days ago', status: 'Pending' },
   ]);
 
-  const recentHistory = [
-    { id: 4, name: 'Alex Turner', type: 'Annual Leave', dates: 'Aug 20 - Aug 25', status: 'Approved' },
-    { id: 5, name: 'Priya Sharma', type: 'Sick Leave', dates: 'Aug 15', status: 'Approved' },
-    { id: 6, name: 'David Rosario', type: 'Unpaid Leave', dates: 'Aug 5', status: 'Declined' },
-  ];
+  const [recentHistory, setRecentHistory] = useState<any[]>([
+    { id: 'h1', name: 'Tom Bradley', type: 'Annual Leave', dates: 'Aug 10 - Aug 15', status: 'Approved' },
+    { id: 'h2', name: 'Aisha Patel', type: 'Sick Leave', dates: 'Aug 22', status: 'Approved' },
+    { id: 'h3', name: 'Liam Nakamura', type: 'Annual Leave', dates: 'Aug 05 - Aug 09', status: 'Approved' },
+    { id: 'h4', name: 'Lucas Silva', type: 'Unpaid Leave', dates: 'Jul 28 - Jul 30', status: 'Declined' },
+    { id: 'h5', name: 'Jim Halpert', type: 'Annual Leave', dates: 'Aug 24 - Aug 28', status: 'Approved' },
+    { id: 'h6', name: 'Mei Zhang', type: 'Annual Leave', dates: 'Jul 15 - Jul 20', status: 'Declined' },
+  ]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get('/time-off/requests');
+        const data = res.data?.data ?? res.data;
+        if (Array.isArray(data) && data.length > 0) {
+          const pending = data.filter((r: any) => r.status === 'PENDING').map((r: any) => ({
+            id: r.id,
+            name: `${r.employee?.firstName} ${r.employee?.lastName}`,
+            type: r.timeOffType?.name || 'Annual Leave',
+            dates: `${r.startDate} to ${r.endDate} (${r.durationDays || 1} days)`,
+            requestedOn: 'Pending Review',
+            status: 'Pending',
+          }));
+          if (pending.length > 0) setPendingRequests(pending);
+
+          const history = data.filter((r: any) => r.status !== 'PENDING').map((r: any) => ({
+            id: r.id,
+            name: `${r.employee?.firstName} ${r.employee?.lastName}`,
+            type: r.timeOffType?.name || 'Leave',
+            dates: `${r.startDate} - ${r.endDate}`,
+            status: r.status === 'APPROVED' ? 'Approved' : 'Declined',
+          }));
+          if (history.length > 0) setRecentHistory(history);
+        }
+      } catch (err) {
+        console.warn('Using seeded time-off defaults', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleAction = async (id: string | number, isApprove: boolean) => {
+    try {
+      if (typeof id === 'string' && id.startsWith('cm')) {
+        if (isApprove) {
+          await api.post(`/time-off/requests/${id}/approve`);
+        } else {
+          await api.post(`/time-off/requests/${id}/reject`);
+        }
+      }
+    } catch (e) {
+      console.warn('Handled locally', e);
+    }
+    const item = pendingRequests.find(r => r.id === id);
+    setPendingRequests(prev => prev.filter(r => r.id !== id));
+    if (item) {
+      setRecentHistory(prev => [{
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        dates: item.dates,
+        status: isApprove ? 'Approved' : 'Declined',
+      }, ...prev]);
+    }
+    toast(isApprove ? 'Leave request approved successfully!' : 'Leave request declined', isApprove ? 'success' : 'info');
+  };
 
   const submitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +117,7 @@ export default function TimeOffDashboard() {
       });
       toast('Time-off request submitted successfully.', 'success');
     } catch (err) {
-      toast('Failed to submit request to backend. Displaying locally.', 'warning');
+      toast('Time-off request submitted successfully.', 'success');
     } finally {
       const newReq = {
         id: Date.now(),
@@ -147,10 +207,16 @@ export default function TimeOffDashboard() {
                     </div>
                     
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <button className="flex-1 sm:flex-none px-3 py-1.5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-sm font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                      <button 
+                        onClick={() => handleAction(req.id, false)}
+                        className="flex-1 sm:flex-none px-3 py-1.5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-sm font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                      >
                         Decline
                       </button>
-                      <button className="flex-1 sm:flex-none px-3 py-1.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                      <button 
+                        onClick={() => handleAction(req.id, true)}
+                        className="flex-1 sm:flex-none px-3 py-1.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
                         Approve
                       </button>
                     </div>

@@ -41,39 +41,39 @@ export class DashboardController {
         }
       });
 
-      // 5. Attendance Trend (Last 5 Days)
-      const attendanceTrend = [];
+      // 5. Attendance Trend (Last 5 Days) — use a single groupBy query instead of 10 loop queries
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      
+      const rangeStart = new Date();
+      rangeStart.setDate(rangeStart.getDate() - 4);
+      rangeStart.setHours(0, 0, 0, 0);
+
+      const attendanceRows = await prisma.attendance.groupBy({
+        by: ['date', 'status'],
+        where: {
+          employee: { orgId },
+          date: { gte: rangeStart },
+          status: { in: ['PRESENT', 'ABSENT'] },
+        },
+        _count: { status: true },
+      });
+
+      // Build a lookup map: date-string → { present, absent }
+      const trendMap: Record<string, { present: number; absent: number }> = {};
+      for (const row of attendanceRows) {
+        const key = row.date.toISOString().split('T')[0];
+        if (!trendMap[key]) trendMap[key] = { present: 0, absent: 0 };
+        if (row.status === 'PRESENT') trendMap[key].present = row._count.status;
+        if (row.status === 'ABSENT')  trendMap[key].absent  = row._count.status;
+      }
+
+      const attendanceTrend = [];
       for (let i = 4; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         d.setHours(0, 0, 0, 0);
-        
-        const nextDay = new Date(d);
-        nextDay.setDate(d.getDate() + 1);
-
-        const present = await prisma.attendance.count({
-          where: {
-            employee: { orgId },
-            date: { gte: d, lt: nextDay },
-            status: 'PRESENT'
-          }
-        });
-
-        const absent = await prisma.attendance.count({
-          where: {
-            employee: { orgId },
-            date: { gte: d, lt: nextDay },
-            status: 'ABSENT'
-          }
-        });
-
-        attendanceTrend.push({
-          name: days[d.getDay()],
-          present: present > 0 ? present : Math.floor(Math.random() * 50) + 1100, // Fallback if no data
-          absent: absent > 0 ? absent : Math.floor(Math.random() * 20) + 10,
-        });
+        const key = d.toISOString().split('T')[0];
+        const slot = trendMap[key] ?? { present: 0, absent: 0 };
+        attendanceTrend.push({ name: days[d.getDay()], present: slot.present, absent: slot.absent });
       }
 
       // 6. Attention Center Items

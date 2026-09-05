@@ -54,3 +54,16 @@ worker.on('completed', (job) => {
 worker.on('failed', (job, err) => {
   console.log(`[Worker EVENT] Job ${job?.id} has failed with ${err.message}`);
 });
+
+// Graceful shutdown: close worker and DB connections cleanly to prevent leaks
+async function shutdown(signal: string) {
+  console.log(`[Worker] Received ${signal}. Shutting down gracefully...`);
+  await worker.close();
+  await prisma.$disconnect();
+  connection.disconnect();
+  console.log('[Worker] Shutdown complete.');
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

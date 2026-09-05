@@ -117,4 +117,66 @@ export class TimeOffService {
       data: { status: 'REJECTED' },
     });
   }
+
+  async getAllRequests(orgId: string, status?: string) {
+    const where: any = { employee: { orgId } };
+    if (status) {
+      where.status = status;
+    }
+    const requests = await prisma.timeOffRequest.findMany({
+      where,
+      include: {
+        employee: true,
+        timeOffType: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return requests.map((r) => {
+      const diffMs = new Date(r.endDate).getTime() - new Date(r.startDate).getTime();
+      const durationDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1);
+      return {
+        id: r.id,
+        employeeId: r.employeeId,
+        timeOffTypeId: r.typeId,
+        startDate: r.startDate.toISOString().split('T')[0],
+        endDate: r.endDate.toISOString().split('T')[0],
+        durationDays,
+        status: r.status,
+        createdAt: r.createdAt.toISOString(),
+        employee: {
+          id: r.employee.id,
+          firstName: r.employee.firstName,
+          lastName: r.employee.lastName,
+          employeeCode: `EMP-${r.employee.firstName[0]}${r.employee.lastName[0]}`,
+        },
+        timeOffType: {
+          id: r.timeOffType.id,
+          name: r.timeOffType.name,
+          isPaid: r.timeOffType.isPaid,
+        },
+      };
+    });
+  }
+
+  async getAllTypes(orgId: string) {
+    return prisma.timeOffType.findMany({
+      where: { orgId },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async getAllAllocations(orgId: string, employeeId?: string) {
+    const where: any = { employee: { orgId } };
+    if (employeeId) where.employeeId = employeeId;
+
+    return prisma.timeOffAllocation.findMany({
+      where,
+      include: {
+        employee: true,
+        timeOffType: true,
+      },
+      orderBy: { employee: { firstName: 'asc' } },
+    });
+  }
 }

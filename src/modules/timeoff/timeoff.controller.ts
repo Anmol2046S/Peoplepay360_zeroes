@@ -29,4 +29,24 @@ export class TimeOffController {
     const result = await this.timeOffService.reject(orgId, id);
     return reply.send({ success: true, data: result });
   };
+
+  getAllRequests = async (request: FastifyRequest, reply: FastifyReply) => {
+    const orgId = request.user!.orgId;
+    const status = (request.query as any)?.status;
+    const result = await this.timeOffService.getAllRequests(orgId, status);
+    return reply.send({ success: true, data: result });
+  };
+
+  getAllTypes = async (request: FastifyRequest, reply: FastifyReply) => {
+    const orgId = request.user!.orgId;
+    const result = await this.timeOffService.getAllTypes(orgId);
+    return reply.send({ success: true, data: result });
+  };
+
+  getAllAllocations = async (request: FastifyRequest, reply: FastifyReply) => {
+    const orgId = request.user!.orgId;
+    const employeeId = (request.query as any)?.employeeId;
+    const result = await this.timeOffService.getAllAllocations(orgId, employeeId);
+    return reply.send({ success: true, data: result });
+  };
 }

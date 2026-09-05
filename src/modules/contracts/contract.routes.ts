@@ -6,5 +6,6 @@ export default async function contractRoutes(app: FastifyInstance) {
   const contractController = new ContractController();
 
   app.post('/', { preHandler: [requirePermission('CONTRACT_CREATE')] }, contractController.create);
+  app.get('/', { preHandler: [requirePermission('CONTRACT_READ')] }, contractController.getAll);
   app.get<{ Params: { employeeId: string } }>('/employee/:employeeId', { preHandler: [requirePermission('CONTRACT_READ')] }, contractController.getByEmployee);
 }

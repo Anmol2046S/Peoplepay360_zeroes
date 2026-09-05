@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, UserMinus, FileText, CheckCircle,
   ArrowUpRight, ArrowDownRight, AlertCircle, Clock,
@@ -87,8 +88,28 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 
 /* ── Main component ─────────────────────────────────────── */
 const HRDashboard = () => {
+  const navigate = useNavigate();
   const [data, setData]     = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleExport = () => {
+    if (!data) return;
+    const csvContent = "Metric,Value\n" + 
+      `Total Employees,${data.metrics?.totalEmployees}\n` +
+      `On Leave Today,${data.metrics?.onLeaveToday}\n` +
+      `Pending Approvals,${data.metrics?.pendingApprovals}\n` +
+      `Payroll Status,${data.metrics?.payrollStatus}\n`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `HR_Metrics_Export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     (async () => {
@@ -157,11 +178,17 @@ const HRDashboard = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Here's what needs your attention today.</p>
         </div>
         <div className="flex items-center gap-2.5">
-          <button className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+          >
             <Download size={14} />
             Export
           </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-lg transition-colors">
+          <button 
+            onClick={() => navigate('/payroll/run')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
             <Play size={13} className="fill-white" />
             Run Payroll
           </button>

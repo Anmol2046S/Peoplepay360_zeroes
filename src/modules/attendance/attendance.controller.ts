@@ -35,4 +35,10 @@ export class AttendanceController {
     const records = await this.attendanceService.getByEmployee(orgId, employeeId);
     return reply.send({ success: true, data: records });
   };
+
+  getAll = async (request: FastifyRequest, reply: FastifyReply) => {
+    const orgId = request.user!.orgId;
+    const records = await this.attendanceService.getAll(orgId);
+    return reply.send({ success: true, data: records });
+  };
 }

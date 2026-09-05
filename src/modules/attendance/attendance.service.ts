@@ -79,4 +79,38 @@ export class AttendanceService {
       orderBy: { date: 'desc' },
     });
   }
+
+  async getAll(orgId: string) {
+    const records = await prisma.attendance.findMany({
+      where: { employee: { orgId } },
+      include: {
+        employee: true,
+      },
+      orderBy: { date: 'desc' },
+      take: 250,
+    });
+
+    return records.map((a) => {
+      const checkInStr = a.checkIn ? new Date(a.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+      const checkOutStr = a.checkOut ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+      return {
+        id: a.id,
+        date: a.date.toISOString().split('T')[0],
+        checkIn: a.checkIn.toISOString(),
+        checkOut: a.checkOut ? a.checkOut.toISOString() : null,
+        workedHours: a.workedHours ? Number(a.workedHours) : 0,
+        status: a.status,
+        employeeId: a.employeeId,
+        employeeName: `${a.employee.firstName} ${a.employee.lastName}`,
+        employee: {
+          id: a.employee.id,
+          firstName: a.employee.firstName,
+          lastName: a.employee.lastName,
+          employeeCode: `EMP-${a.employee.firstName[0]}${a.employee.lastName[0]}`,
+        },
+        timeIn: checkInStr,
+        timeOut: checkOutStr,
+      };
+    });
+  }
 }

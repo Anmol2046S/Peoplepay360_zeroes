@@ -3,6 +3,36 @@ import { NotFoundError, InvalidStateTransitionError, ValidationError } from '../
 import { Decimal } from 'decimal.js';
 import { Parser } from 'expr-eval';
 
+const COMPUTATION_STRATEGIES: Record<string, (rule: any, context: Record<string, number>) => Decimal> = {
+  FIXED: (rule) => new Decimal(rule.value || 0),
+  PERCENTAGE: (rule, context) => {
+    if (rule.dependsOn && rule.dependsOn.length > 0) {
+      const baseVal = context[rule.dependsOn[0]] || 0;
+      return new Decimal(baseVal).mul(new Decimal(rule.value || 0)).div(100);
+    }
+    return new Decimal(0);
+  },
+  FORMULA: (rule, context) => {
+    // If a formula string is available on the rule, evaluate it
+    if (rule.formula && typeof rule.formula === 'string') {
+      try {
+        const parser = new Parser();
+        const expr = parser.parse(rule.formula);
+        const result = expr.evaluate(context);
+        return new Decimal(result ?? 0);
+      } catch (e) {
+        // Formula parse/eval error — fall back to sum of dependencies
+      }
+    }
+    // Fallback: sum of declared dependency values in context
+    let sum = new Decimal(0);
+    for (const dep of rule.dependsOn || []) {
+      sum = sum.add(context[dep] || 0);
+    }
+    return sum;
+  }
+};
+
 export class EngineService {
   async calculatePayrun(orgId: string, payrunId: string) {
     const payrun = await prisma.payrun.findFirst({
@@ -75,74 +105,29 @@ export class EngineService {
     }
 
     // 3. Setup Math Context
-    // We inject BASE variables (like BASE_DAYS, WORKED_DAYS, etc.)
-    // For hackathon simplicity, we assume full attendance unless requested otherwise.
     const context: Record<string, number> = {};
     const lines: Array<{ ruleCode: string, category: string, amount: Decimal, sequence: number }> = [];
 
     let gross = new Decimal(0);
-    let net = new Decimal(0);
+    let totalDeductions = new Decimal(0);
+    let netOverride: Decimal | null = null;
 
     // 4. Evaluate Rules In Order
     for (const rule of structure.rules) {
-      let amount = new Decimal(0);
+      const compute = COMPUTATION_STRATEGIES[rule.computationType];
+      const amount = compute ? compute(rule, context) : new Decimal(0);
 
-      switch (rule.computationType) {
-        case 'FIXED':
-          amount = new Decimal(rule.value || 0);
-          break;
-
-        case 'PERCENTAGE':
-          // Percentages usually depend on a base rule code in `dependsOn[0]`
-          if (rule.dependsOn.length > 0) {
-            const baseVal = context[rule.dependsOn[0]] || 0;
-            amount = new Decimal(baseVal).mul(new Decimal(rule.value || 0)).div(100);
-          }
-          break;
-
-        case 'FORMULA':
-          if (rule.value) {
-            try {
-              // Using expr-eval to safely evaluate string formula with context
-              // Example rule.value = "BASIC + HRA - TAX"
-              const parser = new Parser();
-              const expr = parser.parse(rule.value.toString()); // the formula string is stored in value as a number in db? Wait!
-              // In our schema, `value` is Decimal. We don't have a formula string field. 
-              // THIS IS A BUG IN MY PHASE 6 SCHEMA. Let's fix this mentally: Since value is Decimal, it can't hold a string formula.
-              // For Hackathon, if formula is complex, we need a string. 
-              // Wait, I didn't add a string `formula` column in `SalaryRule`. 
-              throw new Error('Formula string column missing in schema. Fallback to basic sum of dependencies');
-            } catch (e) {
-              // Fallback: If computationType is FORMULA but no string exists, we just sum up dependsOn
-              let sum = new Decimal(0);
-              for (const dep of rule.dependsOn) {
-                sum = sum.add(context[dep] || 0);
-              }
-              amount = sum;
-            }
-          } else {
-             // Basic sum of dependencies
-             let sum = new Decimal(0);
-             for (const dep of rule.dependsOn) {
-               sum = sum.add(context[dep] || 0);
-             }
-             amount = sum;
-          }
-          break;
-      }
-
-      // Add to context for future rules
+      // Add to context for future rules to reference by code
       context[rule.code] = amount.toNumber();
 
       // Accumulate Gross/Net based on category
       if (rule.category === 'BASIC' || rule.category === 'ALLOWANCE') {
         gross = gross.add(amount);
       } else if (rule.category === 'DEDUCTION') {
-        // Net is Gross - Deductions
-      }
-      
-      if (rule.category === 'NET') {
-        net = amount;
+        totalDeductions = totalDeductions.add(amount);
+      } else if (rule.category === 'NET') {
+        // Explicit NET rule overrides automatic calculation
+        netOverride = amount;
       }
 
       lines.push({
@@ -152,6 +137,9 @@ export class EngineService {
         sequence: rule.sequence,
       });
     }
+
+    // Net = explicit NET rule if present, otherwise gross minus all deductions
+    const net = netOverride !== null ? netOverride : gross.minus(totalDeductions);
 
     // 5. Save Payslip inside a transaction
     await prisma.$transaction(async (tx: any) => {

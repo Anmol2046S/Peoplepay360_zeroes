@@ -1,8 +1,67 @@
-node_modules
-# Keep environment variables out of version control
-.env
+# Dependencies
+node_modules/
+frontend/node_modules/
+/.pnp
+.pnp.js
 
-# AI Configuration Directories
-.agents
-.claude
-.windsurf
+# Environment Variables and Sensitive Credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+
+# Production & Build Outputs
+dist/
+dist-ssr/
+build/
+out/
+frontend/dist/
+frontend/dist-ssr/
+
+# Logs & Debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# AI Assistant, IDE & Agent Configurations
+.agents/
+.claude/
+.windsurf/
+.gemini/
+.cursor/
+skills-lock.json
+
+# Cache & Temporary Files
+.cache/
+.parcel-cache/
+.eslintcache
+.vite/
+frontend/.vite/
+coverage/
+*.tsbuildinfo
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary test scripts
+test.js
+test_*.js
+test_*.ts
+scratch/

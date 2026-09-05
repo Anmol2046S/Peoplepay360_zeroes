@@ -72,4 +72,46 @@ export class ContractService {
       orderBy: { startDate: 'desc' },
     });
   }
+
+  async getAll(orgId: string) {
+    const contracts = await prisma.employmentContract.findMany({
+      where: { employee: { orgId } },
+      include: {
+        employee: true,
+        salaryStructure: { include: { rules: true } },
+        workingSchedules: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return contracts.map((c, i) => {
+      const basicRule = c.salaryStructure?.rules?.find(r => r.code === 'BASIC');
+      const monthlyWage = basicRule ? Number(basicRule.value) : 7500;
+      return {
+        id: c.id,
+        contractReference: `CON/2026/${String(i + 1).padStart(4, '0')}`,
+        startDate: c.startDate.toISOString().split('T')[0],
+        endDate: c.endDate ? c.endDate.toISOString().split('T')[0] : null,
+        status: c.status,
+        monthlyWage,
+        employeeId: c.employeeId,
+        employee: {
+          id: c.employee.id,
+          firstName: c.employee.firstName,
+          lastName: c.employee.lastName,
+          employeeCode: `EMP-${String(i + 1).padStart(3, '0')}`,
+        },
+        salaryStructureId: c.salaryStructureId,
+        salaryStructure: c.salaryStructure ? {
+          id: c.salaryStructure.id,
+          name: c.salaryStructure.name,
+          code: c.salaryStructure.name.split(' ')[0].toUpperCase(),
+        } : null,
+        workingSchedule: c.workingSchedules[0] ? {
+          days: c.workingSchedules[0].days,
+          hours: Number(c.workingSchedules[0].hours),
+        } : null,
+      };
+    });
+  }
 }

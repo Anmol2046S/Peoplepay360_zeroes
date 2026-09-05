@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor to handle 401s automatically
+// Interceptor to handle 401s automatically — dispatch event so router handles it (no full reload)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -26,7 +26,8 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('demo_role');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Dispatch a custom event — AuthContext listens for this to update isLoggedIn state
+      window.dispatchEvent(new Event('auth:logout'));
     }
     return Promise.reject(error);
   }

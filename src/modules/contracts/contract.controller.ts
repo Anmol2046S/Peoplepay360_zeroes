@@ -22,4 +22,10 @@ export class ContractController {
     const contracts = await this.contractService.getByEmployee(orgId, employeeId);
     return reply.send({ success: true, data: contracts });
   };
+
+  getAll = async (request: FastifyRequest, reply: FastifyReply) => {
+    const orgId = request.user!.orgId;
+    const contracts = await this.contractService.getAll(orgId);
+    return reply.send({ success: true, data: contracts });
+  };
 }

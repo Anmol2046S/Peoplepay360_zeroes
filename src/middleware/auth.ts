@@ -28,14 +28,9 @@ export const requireAuth = async (request: FastifyRequest, reply: FastifyReply) 
 
 export const requirePermission = (requiredPermission: string) => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    // First ensure they are authenticated
     await requireAuth(request, reply);
-    
-    if (!request.user) {
-      throw new UnauthorizedError();
-    }
-    
-    if (!request.user.permissions.includes(requiredPermission)) {
+    // At this point request.user is guaranteed to be set (requireAuth throws otherwise)
+    if (!request.user!.permissions.includes(requiredPermission)) {
       throw new ForbiddenError(`Missing required permission: ${requiredPermission}`);
     }
   };

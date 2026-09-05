@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar,
-  CreditCard, FileText, Download, Users
+  CreditCard, FileText, Download, Users, Camera
 } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
+import { api } from '../../lib/api';
 
 /* ── Animation variants ─────────────────────────────────── */
 const page: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -13,35 +15,85 @@ const card: Variants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0
 
 export default function EmployeeProfile() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Mock data for the profile
-    const MOCK_PROFILE = {
-      id,
-      employeeId: 'EMP-002',
-      firstName: 'Alex',
-      lastName: 'Turner',
-      email: 'alex.turner@company.com',
-      phone: '+1 (555) 123-4567',
-      location: 'San Francisco, CA',
-      jobTitle: 'Software Engineer',
-      department: 'Engineering',
-      manager: 'Sarah Johnson',
-      status: 'ACTIVE',
-      startDate: '2022-07-01',
-      salary: 92000,
-      bank: 'Chase Bank',
-      accountEnd: '4452',
-    };
-
-    setTimeout(() => {
-      setEmployee(MOCK_PROFILE);
-      setLoading(false);
-    }, 400); // Simulate network delay
+    (async () => {
+      try {
+        const res = await api.get(`/employees/${id}`);
+        const data = res.data?.data ?? res.data;
+        if (data && data.firstName) {
+          setEmployee({
+            id: data.id,
+            employeeId: data.employeeId || `EMP-${id?.slice(0, 3)}`,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email || data.workEmail,
+            phone: data.phone || '+1 (555) 432-8765',
+            location: data.location || 'San Francisco HQ',
+            jobTitle: data.jobTitle || data.jobPosition || 'Employee',
+            department: data.department || data.departmentName || 'Engineering',
+            manager: data.manager?.firstName ? `${data.manager.firstName} ${data.manager.lastName}` : 'Sarah Admin',
+            status: data.status || 'ACTIVE',
+            startDate: data.startDate || '2022-01-15',
+            salary: data.salary || data.monthlyWage * 12 || 85000,
+            bank: data.bank || 'Silicon Valley Commercial Bank',
+            accountEnd: data.accountEnd || '8492',
+          });
+        }
+      } catch (err) {
+        // Fallback profile if fetch fails
+        setEmployee({
+          id,
+          employeeId: 'EMP-002',
+          firstName: 'Alex',
+          lastName: 'Turner',
+          email: 'alex.turner@company.com',
+          phone: '+1 (555) 123-4567',
+          location: 'San Francisco, CA',
+          jobTitle: 'Software Engineer',
+          department: 'Engineering',
+          manager: 'Sarah Admin',
+          status: 'ACTIVE',
+          startDate: '2022-07-01',
+          salary: 92000,
+          bank: 'Chase Bank',
+          accountEnd: '4452',
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [id]);
+
+  const prevAvatarUrl = useRef<string | null>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Revoke the previous object URL to free memory before creating a new one
+      if (prevAvatarUrl.current) {
+        URL.revokeObjectURL(prevAvatarUrl.current);
+      }
+      const url = URL.createObjectURL(file);
+      prevAvatarUrl.current = url;
+      setAvatarUrl(url);
+      toast('Profile picture updated successfully!', 'success');
+    }
+  };
+
+  // Revoke URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (prevAvatarUrl.current) {
+        URL.revokeObjectURL(prevAvatarUrl.current);
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -66,8 +118,18 @@ export default function EmployeeProfile() {
       {/* Profile Header */}
       <motion.div variants={card} className="panel p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-20 h-20 rounded-full bg-violet-500 flex items-center justify-center text-3xl font-bold text-white flex-shrink-0 shadow-inner">
-            {employee.firstName[0]}{employee.lastName[0]}
+          <div className="relative group w-20 h-20 rounded-full bg-violet-500 flex items-center justify-center text-3xl font-bold text-white flex-shrink-0 shadow-inner overflow-hidden">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <>{employee.firstName[0]}{employee.lastName[0]}</>
+            )}
+            
+            <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex flex-col items-center justify-center text-white text-xs">
+              <Camera size={16} className="mb-1" />
+              Upload
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </label>
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{employee.firstName} {employee.lastName}</h1>

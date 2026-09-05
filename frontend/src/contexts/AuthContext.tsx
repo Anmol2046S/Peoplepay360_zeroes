@@ -34,7 +34,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         parsed = { ...(parsed || {}), id: payload.id, email: parsed?.email || payload.email };
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Could not decode stored JWT payload', e);
+      }
     }
     return parsed;
   });
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem('demo_role', role);
   }, [role]);
+
 
   const setRole = (newRole: Role) => setRoleState(newRole);
 
@@ -58,7 +61,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           try {
             const payload = JSON.parse(atob(data.token.split('.')[1]));
             userId = payload.id;
-          } catch (e) {}
+          } catch (e) {
+            console.warn('Could not decode JWT payload for userId', e);
+          }
         }
         const userObj = { ...data.user, id: userId };
 
@@ -69,7 +74,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRoleState(selectedRole);
         setUser(userObj);
         setIsLoggedIn(true);
-        window.location.href = '/dashboard';
         return;
       }
     } catch (err) {
@@ -107,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoleState(selectedRole);
     setUser(demoUser);
     setIsLoggedIn(true);
-    window.location.href = '/dashboard';
   }, []);
 
   const logout = useCallback(() => {
@@ -116,8 +119,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('user');
     setUser(null);
     setIsLoggedIn(false);
-    window.location.href = '/login';
   }, []);
+
+  // Listen for the auth:logout event dispatched by the axios 401 interceptor
+  // This allows the SPA router (not window.location.href) to handle the redirect
+  useEffect(() => {
+    const handleForceLogout = () => logout();
+    window.addEventListener('auth:logout', handleForceLogout);
+    return () => window.removeEventListener('auth:logout', handleForceLogout);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ role, setRole, user, isLoggedIn, login, logout }}>

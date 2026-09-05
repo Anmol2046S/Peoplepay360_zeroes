@@ -151,7 +151,18 @@ export default function Payslips() {
                 </div>
                 
                 <button 
-                  onClick={() => alert('PDF Download triggered (backend hook needed)')}
+                  onClick={() => {
+                    const content = `PAYSLIP - ${selectedSlip.period}\n\nNet Pay: $${selectedSlip.net}\nGross Pay: $${selectedSlip.gross}\nDeductions: $${selectedSlip.deductions}\nPaid on: ${selectedSlip.date}`;
+                    const blob = new Blob([content], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Payslip_${selectedSlip.period.replace(/\s+/g, '_')}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
                   className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors"
                 >
                   <Download size={18} />
