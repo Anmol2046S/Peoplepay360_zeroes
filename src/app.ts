@@ -33,6 +33,15 @@ const buildApp = async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
 
+  // Root route for browsers
+  app.get('/', async () => {
+    return { 
+      message: 'Welcome to PeoplePay360 API', 
+      status: 'Running',
+      docs: '/api/v1' 
+    };
+  });
+
   // Placeholder for API routes
   app.register(async (api) => {
     const { default: authRoutes } = await import('./modules/auth/auth.routes');

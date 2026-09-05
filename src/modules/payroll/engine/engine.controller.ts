@@ -1,5 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { EngineService } from './engine.service';
+import { payrunQueue } from '../../../shared/queue';
+import { prisma } from '../../../database/db';
 
 export class EngineController {
   private engineService: EngineService;
@@ -12,7 +14,28 @@ export class EngineController {
     const orgId = request.user!.orgId;
     const { payrunId } = request.params;
     
-    const result = await this.engineService.calculatePayrun(orgId, payrunId);
-    return reply.status(200).send({ success: true, data: result });
+    // Validate payrun belongs to org and is DRAFT
+    const payrun = await prisma.payrun.findFirst({
+      where: { id: payrunId, orgId, status: 'DRAFT' }
+    });
+
+    if (!payrun) {
+      return reply.status(404).send({ error: 'Payrun not found or not in DRAFT status' });
+    }
+
+    // Set status to CALCULATING
+    await prisma.payrun.update({
+      where: { id: payrunId },
+      data: { status: 'CALCULATING' }
+    });
+
+    // Enqueue background job
+    const job = await payrunQueue.add('calculate_payrun', { orgId, payrunId });
+
+    return reply.status(202).send({ 
+      success: true, 
+      message: 'Payroll calculation queued successfully',
+      jobId: job.id
+    });
   };
 }
