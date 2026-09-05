@@ -18,10 +18,10 @@ export const AttendanceWidget: React.FC<AttendanceWidgetProps> = ({ isOpen, onCl
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user?.employeeId) {
       fetchSessionStatus();
     }
-  }, [isOpen]);
+  }, [isOpen, user?.employeeId]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;

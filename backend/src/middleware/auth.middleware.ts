@@ -41,12 +41,34 @@ export async function authMiddleware(req: AuthRequest, res: Response, next: Next
       throw new AppError('User account is inactive or no longer exists.', 401, 'UNAUTHORIZED');
     }
 
+    let resolvedEmployeeId = user.employeeId;
+
+    if (!resolvedEmployeeId) {
+      // Automatic fallback resolution: find matching employee profile by workEmail or user relation
+      const matchedEmp = await prisma.employee.findFirst({
+        where: {
+          OR: [
+            { workEmail: user.email },
+            { user: { id: user.id } },
+          ],
+        },
+      });
+
+      if (matchedEmp) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { employeeId: matchedEmp.id },
+        });
+        resolvedEmployeeId = matchedEmp.id;
+      }
+    }
+
     req.user = {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-      employeeId: user.employeeId,
+      employeeId: resolvedEmployeeId,
     };
 
     next();

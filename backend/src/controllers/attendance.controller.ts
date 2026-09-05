@@ -41,7 +41,11 @@ export class AttendanceController {
   static async checkIn(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user?.employeeId) {
-        throw new AppError('User is not linked to an employee record.', 400, 'NO_EMPLOYEE_LINK');
+        throw new AppError(
+          'This account is a standalone administrative user without a linked employee record. Personal punch clock is active for employee accounts.',
+          400,
+          'NO_EMPLOYEE_LINK'
+        );
       }
       const timestamp = req.body.timestamp;
       const record = await AttendanceService.checkIn(req.user.employeeId, timestamp);
@@ -54,7 +58,11 @@ export class AttendanceController {
   static async checkOut(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user?.employeeId) {
-        throw new AppError('User is not linked to an employee record.', 400, 'NO_EMPLOYEE_LINK');
+        throw new AppError(
+          'This account is a standalone administrative user without a linked employee record. Personal punch clock is active for employee accounts.',
+          400,
+          'NO_EMPLOYEE_LINK'
+        );
       }
       const timestamp = req.body.timestamp;
       const record = await AttendanceService.checkOut(req.user.employeeId, timestamp);

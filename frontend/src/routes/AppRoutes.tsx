@@ -61,7 +61,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/hr/attendance" element={<AttendanceListPage />} />
           <Route path="/hr/attendance/:id" element={<AttendanceFormPage />} />
 
-          {/* Time Off */}
+          {/* Time Off Hub, Lists & Details Inspection */}
           <Route path="/time-off" element={<TimeOffHub />} />
           <Route path="/time-off/requests" element={<TimeOffRequestsPage />} />
           <Route path="/time-off/requests/:id" element={<TimeOffRequestFormPage />} />

@@ -42,6 +42,16 @@ export class TimeOffController {
     }
   }
 
+  static async getAllocationById(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id;
+      const allocation = await TimeOffService.getAllocationById(id);
+      return sendSuccess(res, allocation, 'Leave allocation fetched successfully');
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async createAllocation(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const allocation = await TimeOffService.createAllocation(req.body);
@@ -64,6 +74,16 @@ export class TimeOffController {
 
       const requests = await TimeOffService.getAllRequests({ employeeId, status });
       return sendSuccess(res, requests, 'Time off requests fetched successfully');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getRequestById(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id;
+      const request = await TimeOffService.getRequestById(id);
+      return sendSuccess(res, request, 'Time off request fetched successfully');
     } catch (err) {
       next(err);
     }

@@ -49,3 +49,27 @@ export function requireSelfOrRole(allowedRolesForOthers: SystemRole[], getTarget
     return next(new AppError('Forbidden: You can only access your own employee records.', 403, 'FORBIDDEN'));
   };
 }
+
+/**
+ * Middleware to explicitly forbid specific roles from executing an endpoint.
+ * Useful for locking down Admin Portal operational mutation actions (e.g. read-only Time Off).
+ */
+export function forbidRole(forbiddenRoles: SystemRole[], customMessage?: string) {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(new AppError('Authentication required.', 401, 'UNAUTHORIZED'));
+    }
+
+    if (forbiddenRoles.includes(req.user.role)) {
+      return next(
+        new AppError(
+          customMessage || `Forbidden: Access denied for role ${req.user.role}`,
+          403,
+          'FORBIDDEN'
+        )
+      );
+    }
+
+    next();
+  };
+}

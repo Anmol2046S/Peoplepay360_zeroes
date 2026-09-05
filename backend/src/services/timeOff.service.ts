@@ -32,6 +32,21 @@ export class TimeOffService {
     });
   }
 
+  static async getAllocationById(id: string) {
+    const allocation = await prisma.timeOffAllocation.findUnique({
+      where: { id },
+      include: {
+        employee: { select: { id: true, firstName: true, lastName: true, employeeCode: true, jobPosition: true } },
+        timeOffType: true,
+      },
+    });
+
+    if (!allocation) {
+      throw new AppError('Time off allocation record not found.', 404, 'ALLOCATION_NOT_FOUND');
+    }
+    return allocation;
+  }
+
   static async createAllocation(data: { employeeId: string; timeOffTypeId: string; allocatedDays: number; description?: string; validityYear?: number }) {
     const allocated = parseFloat(data.allocatedDays as any);
 
@@ -70,6 +85,22 @@ export class TimeOffService {
       },
       orderBy: { startDate: 'desc' },
     });
+  }
+
+  static async getRequestById(id: string) {
+    const request = await prisma.timeOffRequest.findUnique({
+      where: { id },
+      include: {
+        employee: { select: { id: true, firstName: true, lastName: true, employeeCode: true, jobPosition: true } },
+        timeOffType: true,
+        allocation: true,
+      },
+    });
+
+    if (!request) {
+      throw new AppError('Time off request not found.', 404, 'REQUEST_NOT_FOUND');
+    }
+    return request;
   }
 
   static async createRequest(data: { employeeId: string; timeOffTypeId: string; startDate: string; endDate: string; reason?: string }) {
