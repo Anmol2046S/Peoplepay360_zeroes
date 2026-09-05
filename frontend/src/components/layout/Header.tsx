@@ -21,87 +21,200 @@ const buildRoleAwareBreadcrumbs = (
   pathname: string,
   hasRole: (...roles: SystemRole[]) => boolean
 ): BreadcrumbItem[] => {
-  const pathParts = pathname.split('/').filter(Boolean);
-  if (pathParts.length === 0) return [];
+  const cleanPath = pathname.replace(/\/+$/, '') || '/';
+  if (cleanPath === '/' || cleanPath === '/dashboard') {
+    return [{ key: 'dashboard', label: 'Dashboard', isCurrent: true }];
+  }
 
+  const parts = cleanPath.split('/').filter(Boolean);
   const items: BreadcrumbItem[] = [];
 
-  const isRouteAccessible = (path: string): boolean => {
-    if (path === '/dashboard') return true;
-    if (path === '/hr/employees' || path.startsWith('/hr/employees/')) return true;
-    if (path === '/hr/schedules' || path.startsWith('/hr/schedules/')) return true;
-    if (path === '/hr/attendance' || path.startsWith('/hr/attendance/')) return true;
-    if (
-      path === '/time-off' ||
-      path === '/time-off/requests' ||
-      path.startsWith('/time-off/requests/') ||
-      path === '/time-off/allocations' ||
-      path.startsWith('/time-off/allocations/')
-    ) {
-      return true;
-    }
-
-    if (path === '/hr/contracts' || path.startsWith('/hr/contracts/')) {
+  const isAccessible = (path: string): boolean => {
+    if (path.startsWith('/hr/contracts')) {
       return hasRole('HR_MANAGER', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'ADMIN');
     }
-    if (path === '/time-off/types' || path.startsWith('/time-off/types/')) {
+    if (path.startsWith('/time-off/types')) {
       return hasRole('HR_MANAGER', 'HR_PAYROLL_MANAGER', 'ADMIN');
     }
-    if (path.startsWith('/payroll/payruns') || path.startsWith('/payroll/payslips')) {
+    if (path.startsWith('/payroll')) {
       return hasRole('HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'ADMIN');
-    }
-    if (path.startsWith('/payroll/structures') || path.startsWith('/payroll/rules')) {
-      return hasRole('HR_PAYROLL_MANAGER', 'ADMIN');
     }
     if (path.startsWith('/admin')) {
       return hasRole('ADMIN');
     }
-    return false;
+    return true;
   };
 
-  for (let i = 0; i < pathParts.length; i++) {
-    const part = pathParts[i];
-    const isLast = i === pathParts.length - 1;
-    const currentSubpath = `/${pathParts.slice(0, i + 1).join('/')}`;
-
-    let label = part;
-    let targetUrl: string | undefined = currentSubpath;
-
-    if (part.toLowerCase() === 'hr') {
-      label = 'HR';
-      targetUrl = '/hr/employees';
-    } else if (part.toLowerCase() === 'payroll') {
-      label = 'Payroll';
-      targetUrl = hasRole('HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'ADMIN')
-        ? '/payroll/payruns'
-        : undefined;
-    } else if (part.toLowerCase() === 'time-off') {
-      label = 'Time Off';
-      targetUrl = '/time-off';
-    } else if (part.toLowerCase() === 'admin') {
-      label = 'Administration';
-      targetUrl = hasRole('ADMIN') ? '/admin/users' : undefined;
-    } else if (part.toLowerCase() === 'new') {
-      label = 'New Record';
-    } else if (i === pathParts.length - 1 && part.length > 6 && (/[0-9]/.test(part) || part.includes('-'))) {
-      label = 'Details';
-    } else {
-      label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
+  if (parts[0] === 'hr') {
+    const sub = parts[1];
+    if (sub === 'employees') {
+      items.push({
+        key: 'employees',
+        label: 'Employees',
+        to: parts.length > 2 ? '/hr/employees' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        const detailLabel = parts[2] === 'new' ? 'New Employee' : 'Employee Profile';
+        items.push({ key: 'employee-detail', label: detailLabel, isCurrent: true });
+      }
+    } else if (sub === 'contracts') {
+      if (isAccessible('/hr/contracts')) {
+        items.push({
+          key: 'contracts',
+          label: 'Contracts',
+          to: parts.length > 2 ? '/hr/contracts' : undefined,
+          isCurrent: parts.length === 2,
+        });
+        if (parts[2]) {
+          const detailLabel = parts[2] === 'new' ? 'New Contract' : 'Contract Details';
+          items.push({ key: 'contract-detail', label: detailLabel, isCurrent: true });
+        }
+      }
+    } else if (sub === 'schedules') {
+      items.push({
+        key: 'schedules',
+        label: 'Schedules',
+        to: parts.length > 2 ? '/hr/schedules' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        const detailLabel = parts[2] === 'new' ? 'New Schedule' : 'Schedule Details';
+        items.push({ key: 'schedule-detail', label: detailLabel, isCurrent: true });
+      }
+    } else if (sub === 'attendance') {
+      items.push({
+        key: 'attendance',
+        label: 'Attendance',
+        to: parts.length > 2 ? '/hr/attendance' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        const detailLabel = parts[2] === 'new' ? 'Log Attendance' : 'Attendance Record';
+        items.push({ key: 'attendance-detail', label: detailLabel, isCurrent: true });
+      }
     }
-
-    if (targetUrl && !isRouteAccessible(targetUrl)) {
-      targetUrl = undefined;
-    }
-
-    if (isLast) {
-      targetUrl = undefined;
-    }
-
+  } else if (parts[0] === 'time-off') {
     items.push({
-      key: `${currentSubpath}-${i}`,
-      label,
-      to: targetUrl,
-      isCurrent: isLast,
+      key: 'time-off-hub',
+      label: 'Time Off',
+      to: parts.length > 1 ? '/time-off' : undefined,
+      isCurrent: parts.length === 1,
+    });
+    const sub = parts[1];
+    if (sub === 'requests') {
+      items.push({
+        key: 'requests',
+        label: 'Requests',
+        to: parts.length > 2 ? '/time-off/requests' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        const detailLabel = parts[2] === 'new' ? 'New Request' : 'Request Details';
+        items.push({ key: 'request-detail', label: detailLabel, isCurrent: true });
+      }
+    } else if (sub === 'allocations') {
+      items.push({
+        key: 'allocations',
+        label: 'Allocations',
+        to: parts.length > 2 ? '/time-off/allocations' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        const detailLabel = parts[2] === 'new' ? 'New Allocation' : 'Allocation Details';
+        items.push({ key: 'allocation-detail', label: detailLabel, isCurrent: true });
+      }
+    } else if (sub === 'types') {
+      if (isAccessible('/time-off/types')) {
+        items.push({
+          key: 'types',
+          label: 'Leave Types',
+          to: parts.length > 2 ? '/time-off/types' : undefined,
+          isCurrent: parts.length === 2,
+        });
+        if (parts[2]) {
+          const detailLabel = parts[2] === 'new' ? 'New Leave Type' : 'Type Details';
+          items.push({ key: 'type-detail', label: detailLabel, isCurrent: true });
+        }
+      }
+    }
+  } else if (parts[0] === 'payroll') {
+    const hasPayrollAccess = isAccessible('/payroll');
+    const parentTarget = hasPayrollAccess ? '/payroll/payruns' : undefined;
+    items.push({
+      key: 'payroll-root',
+      label: 'Payroll',
+      to: parts.length > 1 && hasPayrollAccess ? parentTarget : undefined,
+      isCurrent: false,
+    });
+
+    const sub = parts[1];
+    if (sub === 'payruns') {
+      items.push({
+        key: 'payruns',
+        label: 'Payrun Batches',
+        to: parts.length > 2 && hasPayrollAccess ? '/payroll/payruns' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        items.push({ key: 'payrun-detail', label: 'Batch Processing', isCurrent: true });
+      }
+    } else if (sub === 'payslips') {
+      items.push({
+        key: 'payslips',
+        label: 'Payslips',
+        to: parts.length > 2 && hasPayrollAccess ? '/payroll/payslips' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        items.push({ key: 'payslip-detail', label: 'Payslip Computation', isCurrent: true });
+      }
+    } else if (sub === 'structures') {
+      items.push({
+        key: 'structures',
+        label: 'Salary Structures',
+        to: parts.length > 2 && hasPayrollAccess ? '/payroll/structures' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        const detailLabel = parts[2] === 'new' ? 'New Structure' : 'Structure Details';
+        items.push({ key: 'structure-detail', label: detailLabel, isCurrent: true });
+      }
+    } else if (sub === 'rules') {
+      items.push({
+        key: 'rules',
+        label: 'Salary Rules',
+        to: parts.length > 2 && hasPayrollAccess ? '/payroll/rules' : undefined,
+        isCurrent: parts.length === 2,
+      });
+      if (parts[2]) {
+        const detailLabel = parts[2] === 'new' ? 'New Rule' : 'Rule Details';
+        items.push({ key: 'rule-detail', label: detailLabel, isCurrent: true });
+      }
+    }
+  } else if (parts[0] === 'admin') {
+    const isAdmin = isAccessible('/admin');
+    items.push({
+      key: 'admin-root',
+      label: 'Administration',
+      to: isAdmin ? '/admin/users' : undefined,
+      isCurrent: false,
+    });
+    const sub = parts[1];
+    if (sub === 'users') {
+      items.push({ key: 'users', label: 'User Management', isCurrent: true });
+    }
+  } else {
+    parts.forEach((p, idx) => {
+      const isLast = idx === parts.length - 1;
+      const subpath = `/${parts.slice(0, idx + 1).join('/')}`;
+      const label = p.charAt(0).toUpperCase() + p.slice(1).replace(/-/g, ' ');
+      items.push({
+        key: `${subpath}-${idx}`,
+        label,
+        to: !isLast && isAccessible(subpath) ? subpath : undefined,
+        isCurrent: isLast,
+      });
     });
   }
 
@@ -130,7 +243,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileSidebar }) => {
       </button>
 
       <div className="header-breadcrumb">
-        <Link to="/dashboard" className="header-breadcrumb-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/dashboard" className="header-breadcrumb-item" style={{ textDecoration: 'none' }}>
           PeoplePay360
         </Link>
         {breadcrumbs.map((item) => (
@@ -143,7 +256,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileSidebar }) => {
                 {item.label}
               </Link>
             ) : (
-              <span className="header-breadcrumb-item" style={{ color: 'var(--text-muted)', opacity: 0.75 }}>
+              <span className="header-breadcrumb-item" style={{ color: 'var(--text-muted)' }}>
                 {item.label}
               </span>
             )}

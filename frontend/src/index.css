@@ -332,11 +332,22 @@ img { max-width: 100%; display: block; }
 }
 .header-breadcrumb-item {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-weight: 500;
+  transition: color 0.15s ease;
 }
-.header-breadcrumb-item.current { color: var(--text-primary); font-weight: 600; }
-.header-breadcrumb-sep { color: var(--text-muted); font-size: 12px; }
+a.header-breadcrumb-item:hover {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+.header-breadcrumb-item.current {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.header-breadcrumb-sep {
+  color: var(--text-muted);
+  font-size: 12px;
+}
 .header-actions {
   display: flex;
   align-items: center;
