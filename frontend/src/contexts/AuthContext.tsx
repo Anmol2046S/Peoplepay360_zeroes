@@ -28,7 +28,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    let parsed = saved ? JSON.parse(saved) : null;
+    const token = localStorage.getItem('token');
+    if (token && (!parsed || !parsed.id)) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        parsed = { ...(parsed || {}), id: payload.id, email: parsed?.email || payload.email };
+      } catch (e) {}
+    }
+    return parsed;
   });
   
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('token'));
@@ -45,12 +53,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await response.json();
       
       if (data.token) {
+        let userId = data.user?.id;
+        if (!userId) {
+          try {
+            const payload = JSON.parse(atob(data.token.split('.')[1]));
+            userId = payload.id;
+          } catch (e) {}
+        }
+        const userObj = { ...data.user, id: userId };
+
         localStorage.setItem('token', data.token);
         localStorage.setItem('demo_role', selectedRole);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('user', JSON.stringify(userObj));
         
         setRoleState(selectedRole);
-        setUser(data.user);
+        setUser(userObj);
         setIsLoggedIn(true);
         window.location.href = '/dashboard';
       }

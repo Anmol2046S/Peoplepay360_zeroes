@@ -77,20 +77,22 @@ export class AttendanceService {
     });
   }
 
-  async getByEmployee(orgId: string, employeeIdOrUserId: string) {
+  async getByEmployee(orgId: string, employeeIdOrUserId: string, requestUserId?: string) {
     const employee = await prisma.employee.findFirst({
       where: { 
         orgId,
         OR: [
           { id: employeeIdOrUserId },
-          { userId: employeeIdOrUserId }
+          { userId: employeeIdOrUserId },
+          ...(requestUserId ? [{ userId: requestUserId }] : [])
         ]
       },
     });
-    if (!employee) throw new NotFoundError('Employee not found');
+    if (!employee) return [];
 
     return prisma.attendance.findMany({
       where: { employeeId: employee.id },
+      include: { employee: { include: { user: true } } },
       orderBy: { date: 'desc' },
     });
   }

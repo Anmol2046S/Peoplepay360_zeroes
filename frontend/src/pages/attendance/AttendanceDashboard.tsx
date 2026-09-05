@@ -22,7 +22,8 @@ export default function AttendanceDashboard() {
     const fetchAttendance = async () => {
       try {
         setLoading(true);
-        const endpoint = isEmployee ? `/attendance/employee/${user?.id}` : '/attendance';
+        const targetId = user?.id || 'me';
+        const endpoint = isEmployee ? `/attendance/employee/${targetId}` : '/attendance';
         const res = await api.get(endpoint);
         if (res.data?.success) {
           setLogs(res.data.data);

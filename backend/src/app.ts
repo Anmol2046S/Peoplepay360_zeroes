@@ -101,7 +101,7 @@ const buildApp = async () => {
         permissions: user.role.permissions
       }, secret, { expiresIn: '1d' });
 
-      return { token, user: { email: user.email, name: (user as any).name || user.email.split('@')[0] || 'Demo User' } };
+      return { token, user: { id: user.id, email: user.email, name: (user as any).name || user.email.split('@')[0] || 'Demo User' } };
     });
 
     api.register(authRoutes, { prefix: '/auth' });

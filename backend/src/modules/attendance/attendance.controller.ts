@@ -37,9 +37,12 @@ export class AttendanceController {
 
   getByEmployee = async (request: FastifyRequest<{ Params: { employeeId: string } }>, reply: FastifyReply) => {
     const orgId = request.user!.orgId;
-    const { employeeId } = request.params;
+    let { employeeId } = request.params;
+    if (!employeeId || employeeId === 'undefined' || employeeId === 'me') {
+      employeeId = request.user!.id;
+    }
     
-    const records = await this.attendanceService.getByEmployee(orgId, employeeId);
+    const records = await this.attendanceService.getByEmployee(orgId, employeeId, request.user!.id);
     return reply.send({ success: true, data: records });
   };
 
