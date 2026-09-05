@@ -17,7 +17,7 @@ class ReportService {
             throw new errors_1.NotFoundError('Payrun not found');
         let totalGross = new decimal_js_1.Decimal(0);
         let totalNet = new decimal_js_1.Decimal(0);
-        let totalEmployees = payrun._count.employees;
+        const totalEmployees = payrun._count.employees;
         for (const slip of payrun.payslips) {
             totalGross = totalGross.add(slip.grossAmount);
             totalNet = totalNet.add(slip.netAmount);

@@ -51,5 +51,11 @@ class PayrunController {
         const result = await this.payrunService.finalize(orgId, id);
         return reply.send({ success: true, data: result });
     };
+    getMyPayslips = async (request, reply) => {
+        const orgId = request.user.orgId;
+        const userId = request.user.id;
+        const payslips = await this.payrunService.getMyPayslips(orgId, userId);
+        return reply.send({ success: true, payslips });
+    };
 }
 exports.PayrunController = PayrunController;

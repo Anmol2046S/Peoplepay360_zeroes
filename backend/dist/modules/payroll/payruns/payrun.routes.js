@@ -7,6 +7,7 @@ async function payrunRoutes(app) {
     const payrunController = new payrun_controller_1.PayrunController();
     app.post('/', { preHandler: [(0, auth_1.requirePermission)('PAYRUN_CALCULATE')] }, payrunController.initialize);
     app.get('/', { preHandler: [(0, auth_1.requirePermission)('PAYRUN_READ')] }, payrunController.getAll);
+    app.get('/me/payslips', { preHandler: [auth_1.requireAuth] }, payrunController.getMyPayslips);
     app.get('/:id', { preHandler: [(0, auth_1.requirePermission)('PAYRUN_READ')] }, payrunController.getById);
     // Approvals & Finalization
     app.post('/:id/submit', { preHandler: [(0, auth_1.requirePermission)('PAYRUN_CALCULATE')] }, payrunController.submitForApproval);

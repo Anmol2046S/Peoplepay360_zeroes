@@ -18,7 +18,14 @@ export class EmployeeController {
 
   getAll = async (request: FastifyRequest, reply: FastifyReply) => {
     const orgId = request.user!.orgId;
+    const permissions = request.user?.permissions || [];
+    
     const employees = await this.employeeService.getAll(orgId);
+    if (!permissions.includes('EMPLOYEE_READ')) {
+      const selfEmp = employees.filter((e: any) => e.userId === request.user!.id);
+      return reply.send({ success: true, data: selfEmp });
+    }
+    
     return reply.send({ success: true, data: employees });
   };
 

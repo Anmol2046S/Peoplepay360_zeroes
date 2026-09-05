@@ -162,4 +162,46 @@ export class PayrunService {
       return finalized;
     });
   }
+
+  async getMyPayslips(orgId: string, userId: string) {
+    const employee = await prisma.employee.findFirst({
+      where: {
+        orgId,
+        userId,
+      },
+    });
+    if (!employee) {
+      return [];
+    }
+
+    const payslips = await prisma.payslip.findMany({
+      where: {
+        employeeId: employee.id,
+      },
+      include: {
+        payrun: true,
+        lines: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return payslips.map((slip) => {
+      const gross = Number(slip.grossAmount || 0);
+      const net = Number(slip.netAmount || 0);
+      const deductions = Math.max(0, gross - net);
+      return {
+        id: slip.id,
+        period: slip.payrun?.periodStart
+          ? new Date(slip.payrun.periodStart).toLocaleString('default', { month: 'long', year: 'numeric' })
+          : 'Pay Period',
+        gross,
+        net,
+        deductions,
+        status: slip.status === 'FINALIZED' ? 'PAID' : slip.status,
+        date: slip.createdAt ? new Date(slip.createdAt).toISOString().split('T')[0] : '',
+      };
+    });
+  }
 }

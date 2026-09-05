@@ -17,6 +17,7 @@ import ruleRoutes from './modules/payroll/salary-rules/rule.routes';
 import payrunRoutes from './modules/payroll/payruns/payrun.routes';
 import engineRoutes from './modules/payroll/engine/engine.routes';
 import reportRoutes from './modules/reports/report.routes';
+import userRoutes from './modules/users/user.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 
 const buildApp = async () => {
@@ -40,6 +41,7 @@ const buildApp = async () => {
     origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
   });
   await app.register(helmet, {
     crossOriginResourcePolicy: false,
@@ -70,12 +72,10 @@ const buildApp = async () => {
       const query = request.query as { role?: string };
       const requestedRole = query?.role?.toUpperCase();
 
-      let targetRoleName = 'SUPER_ADMIN';
-      if (requestedRole === 'EMPLOYEE') {
-        targetRoleName = 'EMPLOYEE';
-      } else if (requestedRole === 'HR') {
-        targetRoleName = 'HR_MANAGER';
-      }
+      let targetRoleName = requestedRole || 'ADMIN';
+      if (requestedRole === 'SUPER_ADMIN') targetRoleName = 'ADMIN';
+      if (requestedRole === 'HR') targetRoleName = 'HR_MANAGER';
+      if (requestedRole === 'PAYROLL') targetRoleName = 'HR_PAYROLL_MANAGER';
 
       let user = await prisma.user.findFirst({
         where: { role: { name: targetRoleName } },
@@ -114,6 +114,7 @@ const buildApp = async () => {
     api.register(payrunRoutes, { prefix: '/payroll/payruns' });
     api.register(engineRoutes, { prefix: '/payroll/engine' });
     api.register(reportRoutes, { prefix: '/reports' });
+    api.register(userRoutes, { prefix: '/users' });
     api.register(dashboardRoutes, { prefix: '/dashboard' });
     
     api.get('/', async () => {

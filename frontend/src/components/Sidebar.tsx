@@ -1,44 +1,61 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Clock, CalendarOff,
-  Calculator, FileText, CheckSquare, Settings, LogOut,
+  Calculator, FileText, CheckSquare, Settings, LogOut, UserCheck, Layers, Award
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import type { Role } from '../contexts/AuthContext';
 
+const ALL_ROLES: Role[] = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'EMPLOYEE'];
+const HR_MANAGERS: Role[] = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER'];
+const PAYROLL_ROLES: Role[] = ['ADMIN', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER'];
+const ADMIN_ONLY: Role[] = ['ADMIN'];
+
 const navGroups = [
   {
     label: 'Overview',
     items: [
-      { label: 'Dashboard',  path: '/dashboard',  icon: LayoutDashboard, roles: ['HR', 'EMPLOYEE'] as Role[] },
+      { label: 'Dashboard',  path: '/dashboard',  icon: LayoutDashboard, roles: ALL_ROLES },
     ],
   },
   {
     label: 'Workforce',
     items: [
-      { label: 'Employees',  path: '/employees',  icon: Users,      roles: ['HR'] as Role[] },
-      { label: 'Attendance', path: '/attendance', icon: Clock,      roles: ['HR', 'EMPLOYEE'] as Role[] },
-      { label: 'Time Off',   path: '/time-off',   icon: CalendarOff,roles: ['HR', 'EMPLOYEE'] as Role[] },
+      { label: 'Employees',   path: '/employees',            icon: Users,        roles: HR_MANAGERS },
+      { label: 'Contracts',   path: '/contracts',            icon: FileText,     roles: HR_MANAGERS },
+      { label: 'Attendance',  path: '/attendance',           icon: Clock,        roles: ALL_ROLES },
+      { label: 'Time Off',    path: '/time-off',             icon: CalendarOff,  roles: ALL_ROLES },
+      { label: 'Allocations', path: '/time-off/allocations', icon: Award,        roles: HR_MANAGERS },
     ],
   },
   {
     label: 'Finance',
     items: [
-      { label: 'Payroll',    path: '/payroll',    icon: Calculator, roles: ['HR'] as Role[] },
-      { label: 'Payslips',   path: '/payslips',   icon: FileText,   roles: ['HR', 'EMPLOYEE'] as Role[] },
-      { label: 'Reports',    path: '/reports',    icon: FileText,   roles: ['HR'] as Role[] },
+      { label: 'Payroll',    path: '/payroll',            icon: Calculator, roles: PAYROLL_ROLES },
+      { label: 'Structures', path: '/payroll/structures', icon: Layers,     roles: PAYROLL_ROLES },
+      { label: 'Payslips',   path: '/payslips',           icon: FileText,   roles: ALL_ROLES },
+      { label: 'Reports',    path: '/reports',            icon: FileText,   roles: HR_MANAGERS },
     ],
   },
   {
     label: 'Admin',
     items: [
-      { label: 'Approvals',  path: '/approvals',  icon: CheckSquare,roles: ['HR'] as Role[] },
-      { label: 'Settings',   path: '/settings',   icon: Settings,   roles: ['HR', 'EMPLOYEE'] as Role[] },
+      { label: 'Users & RBAC', path: '/users',      icon: UserCheck,  roles: ADMIN_ONLY },
+      { label: 'Approvals',    path: '/approvals',  icon: CheckSquare,roles: HR_MANAGERS },
+      { label: 'Settings',     path: '/settings',   icon: Settings,   roles: ALL_ROLES },
     ],
   },
 ];
+
+const roleTitles: Record<Role, string> = {
+  ADMIN: 'System Admin',
+  HR_MANAGER: 'HR Manager',
+  HR_PAYROLL_USER: 'HR Payroll User',
+  HR_PAYROLL_MANAGER: 'HR Payroll Manager',
+  EMPLOYEE: 'Employee',
+};
 
 const Sidebar = () => {
   const { role, user, logout } = useAuth();
@@ -114,7 +131,7 @@ const Sidebar = () => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-200 group-hover:text-red-400 truncate transition-colors">{user?.name || '—'}</p>
-            <p className="text-xs text-gray-600 group-hover:text-red-500/70 truncate transition-colors">{role === 'HR' ? 'HR Manager' : 'Employee'}</p>
+            <p className="text-xs text-gray-600 group-hover:text-red-500/70 truncate transition-colors">{roleTitles[role] || role}</p>
           </div>
           <LogOut size={16} className="text-gray-600 group-hover:text-red-400 flex-shrink-0 transition-colors" />
         </button>

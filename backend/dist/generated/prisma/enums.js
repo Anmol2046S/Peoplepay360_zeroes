@@ -9,3 +9,84 @@
 * 🟢 You can import this file directly.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PayslipStatus = exports.PayrunStatus = exports.ComputationMethod = exports.SalaryRuleCategory = exports.TimeOffAllocationStatus = exports.TimeOffRequestStatus = exports.TimeOffApprovalType = exports.TimeOffUnit = exports.AttendanceStatus = exports.ContractStatus = exports.AccountStatus = exports.SystemRole = void 0;
+exports.SystemRole = {
+    SUPER_ADMIN: 'SUPER_ADMIN',
+    HR_MANAGER: 'HR_MANAGER',
+    HR_PAYROLL_USER: 'HR_PAYROLL_USER',
+    HR_PAYROLL_MANAGER: 'HR_PAYROLL_MANAGER',
+    DEPARTMENT_MANAGER: 'DEPARTMENT_MANAGER',
+    EMPLOYEE: 'EMPLOYEE'
+};
+exports.AccountStatus = {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE',
+    SUSPENDED: 'SUSPENDED'
+};
+exports.ContractStatus = {
+    DRAFT: 'DRAFT',
+    ACTIVE: 'ACTIVE',
+    RUNNING: 'RUNNING',
+    EXPIRED: 'EXPIRED',
+    TERMINATED: 'TERMINATED',
+    CANCELLED: 'CANCELLED'
+};
+exports.AttendanceStatus = {
+    PRESENT: 'PRESENT',
+    ABSENT: 'ABSENT',
+    LATE: 'LATE',
+    HALF_DAY: 'HALF_DAY',
+    OVERTIME: 'OVERTIME'
+};
+exports.TimeOffUnit = {
+    DAYS: 'DAYS',
+    HOURS: 'HOURS'
+};
+exports.TimeOffApprovalType = {
+    MANAGER: 'MANAGER',
+    OFFICER: 'OFFICER',
+    NO_VALIDATION: 'NO_VALIDATION'
+};
+exports.TimeOffRequestStatus = {
+    DRAFT: 'DRAFT',
+    PENDING: 'PENDING',
+    TO_APPROVE: 'TO_APPROVE',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
+    REFUSED: 'REFUSED'
+};
+exports.TimeOffAllocationStatus = {
+    DRAFT: 'DRAFT',
+    TO_APPROVE: 'TO_APPROVE',
+    APPROVED: 'APPROVED',
+    REFUSED: 'REFUSED'
+};
+exports.SalaryRuleCategory = {
+    BASIC: 'BASIC',
+    ALLOWANCE: 'ALLOWANCE',
+    GROSS: 'GROSS',
+    DEDUCTION: 'DEDUCTION',
+    NET: 'NET'
+};
+exports.ComputationMethod = {
+    FIXED: 'FIXED',
+    PERCENTAGE: 'PERCENTAGE',
+    FORMULA: 'FORMULA'
+};
+exports.PayrunStatus = {
+    DRAFT: 'DRAFT',
+    CALCULATING: 'CALCULATING',
+    COMPUTED: 'COMPUTED',
+    VALIDATING: 'VALIDATING',
+    VALIDATED: 'VALIDATED',
+    READY_FOR_APPROVAL: 'READY_FOR_APPROVAL',
+    APPROVED: 'APPROVED',
+    FINALIZED: 'FINALIZED',
+    PAID: 'PAID'
+};
+exports.PayslipStatus = {
+    DRAFT: 'DRAFT',
+    FINALIZED: 'FINALIZED',
+    DONE: 'DONE',
+    CANCELLED: 'CANCELLED'
+};

@@ -48,6 +48,14 @@ export class AttendanceController {
 
   getAll = async (request: FastifyRequest, reply: FastifyReply) => {
     const orgId = request.user!.orgId;
+    const permissions = request.user?.permissions || [];
+    
+    // If caller is Employee (has ATTENDANCE_SELF but not ATTENDANCE_READ), scope to own attendance records
+    if (permissions.includes('ATTENDANCE_SELF') && !permissions.includes('ATTENDANCE_READ')) {
+      const records = await this.attendanceService.getByEmployee(orgId, request.user!.id, request.user!.id);
+      return reply.send({ success: true, data: records });
+    }
+
     const records = await this.attendanceService.getAll(orgId);
     return reply.send({ success: true, data: records });
   };

@@ -26,7 +26,7 @@ export const requireAuth = async (request: FastifyRequest, reply: FastifyReply) 
   }
 };
 
-export const requirePermission = (requiredPermission: string) => {
+export const requirePermission = (requiredPermission: string | string[]) => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     // First ensure they are authenticated
     await requireAuth(request, reply);
@@ -34,9 +34,13 @@ export const requirePermission = (requiredPermission: string) => {
     if (!request.user) {
       throw new UnauthorizedError();
     }
-    
-    if (!request.user.permissions.includes(requiredPermission)) {
-      throw new ForbiddenError(`Missing required permission: ${requiredPermission}`);
+
+    const userPerms = request.user.permissions || [];
+    const required = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
+
+    const hasPerm = required.some((p) => userPerms.includes(p));
+    if (!hasPerm) {
+      throw new ForbiddenError(`Missing required permission: ${required.join(' or ')}`);
     }
   };
 };

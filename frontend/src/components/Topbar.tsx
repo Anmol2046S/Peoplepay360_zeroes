@@ -43,9 +43,6 @@ const Topbar = () => {
       </div>
 
       <div className="flex items-center gap-1 ml-4">
-
-
-
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}

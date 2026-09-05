@@ -48,7 +48,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defineExtension = exports.NullsOrder = exports.QueryMode = exports.SortOrder = exports.AuditLogScalarFieldEnum = exports.PayslipLineScalarFieldEnum = exports.PayslipScalarFieldEnum = exports.PayrunEmployeeScalarFieldEnum = exports.PayrunScalarFieldEnum = exports.SalaryRuleScalarFieldEnum = exports.SalaryStructureScalarFieldEnum = exports.TimeOffRequestScalarFieldEnum = exports.TimeOffAllocationScalarFieldEnum = exports.TimeOffTypeScalarFieldEnum = exports.AttendanceScalarFieldEnum = exports.WorkingScheduleScalarFieldEnum = exports.EmploymentContractScalarFieldEnum = exports.EmployeeScalarFieldEnum = exports.RoleScalarFieldEnum = exports.UserScalarFieldEnum = exports.OrganizationScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
+exports.defineExtension = exports.NullsOrder = exports.QueryMode = exports.SortOrder = exports.AuditLogScalarFieldEnum = exports.PayslipLineScalarFieldEnum = exports.PayslipScalarFieldEnum = exports.PayrunEmployeeScalarFieldEnum = exports.PayrunScalarFieldEnum = exports.SalaryRuleScalarFieldEnum = exports.SalaryStructureScalarFieldEnum = exports.TimeOffRequestScalarFieldEnum = exports.TimeOffAllocationScalarFieldEnum = exports.TimeOffTypeScalarFieldEnum = exports.AttendanceScalarFieldEnum = exports.WorkingScheduleScalarFieldEnum = exports.EmploymentContractScalarFieldEnum = exports.EmployeeScalarFieldEnum = exports.DepartmentScalarFieldEnum = exports.RoleScalarFieldEnum = exports.UserScalarFieldEnum = exports.OrganizationScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/client"));
 /**
  * Prisma Errors
@@ -106,6 +106,7 @@ exports.ModelName = {
     Organization: 'Organization',
     User: 'User',
     Role: 'Role',
+    Department: 'Department',
     Employee: 'Employee',
     EmploymentContract: 'EmploymentContract',
     WorkingSchedule: 'WorkingSchedule',
@@ -141,8 +142,12 @@ exports.UserScalarFieldEnum = {
     orgId: 'orgId',
     email: 'email',
     passwordHash: 'passwordHash',
+    name: 'name',
     roleId: 'roleId',
+    roleName: 'roleName',
     status: 'status',
+    resetPasswordToken: 'resetPasswordToken',
+    resetPasswordExpires: 'resetPasswordExpires',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
@@ -152,22 +157,40 @@ exports.RoleScalarFieldEnum = {
     permissions: 'permissions',
     createdAt: 'createdAt'
 };
+exports.DepartmentScalarFieldEnum = {
+    id: 'id',
+    orgId: 'orgId',
+    name: 'name',
+    code: 'code',
+    description: 'description',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
 exports.EmployeeScalarFieldEnum = {
     id: 'id',
     orgId: 'orgId',
     userId: 'userId',
+    departmentId: 'departmentId',
     firstName: 'firstName',
     lastName: 'lastName',
+    jobTitle: 'jobTitle',
+    phoneNumber: 'phoneNumber',
+    address: 'address',
+    emergencyContact: 'emergencyContact',
     status: 'status',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
 exports.EmploymentContractScalarFieldEnum = {
     id: 'id',
+    contractReference: 'contractReference',
     employeeId: 'employeeId',
     salaryStructureId: 'salaryStructureId',
+    departmentId: 'departmentId',
     startDate: 'startDate',
     endDate: 'endDate',
+    monthlyWage: 'monthlyWage',
+    notes: 'notes',
     status: 'status',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -176,7 +199,9 @@ exports.WorkingScheduleScalarFieldEnum = {
     id: 'id',
     contractId: 'contractId',
     days: 'days',
-    hours: 'hours'
+    hours: 'hours',
+    startTime: 'startTime',
+    endTime: 'endTime'
 };
 exports.AttendanceScalarFieldEnum = {
     id: 'id',
@@ -185,28 +210,45 @@ exports.AttendanceScalarFieldEnum = {
     checkIn: 'checkIn',
     checkOut: 'checkOut',
     workedHours: 'workedHours',
+    overtimeHours: 'overtimeHours',
     status: 'status',
+    notes: 'notes',
+    isManualEdit: 'isManualEdit',
     createdAt: 'createdAt'
 };
 exports.TimeOffTypeScalarFieldEnum = {
     id: 'id',
     orgId: 'orgId',
     name: 'name',
-    isPaid: 'isPaid'
+    isPaid: 'isPaid',
+    unit: 'unit',
+    requiresAllocation: 'requiresAllocation',
+    approvalType: 'approvalType',
+    displayColor: 'displayColor'
 };
 exports.TimeOffAllocationScalarFieldEnum = {
     id: 'id',
     employeeId: 'employeeId',
     typeId: 'typeId',
     totalDays: 'totalDays',
-    usedDays: 'usedDays'
+    usedDays: 'usedDays',
+    remainingDays: 'remainingDays',
+    validityYear: 'validityYear',
+    description: 'description',
+    status: 'status',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
 };
 exports.TimeOffRequestScalarFieldEnum = {
     id: 'id',
     employeeId: 'employeeId',
     typeId: 'typeId',
+    allocationId: 'allocationId',
     startDate: 'startDate',
     endDate: 'endDate',
+    durationDays: 'durationDays',
+    reason: 'reason',
+    approverName: 'approverName',
     status: 'status',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -215,6 +257,8 @@ exports.SalaryStructureScalarFieldEnum = {
     id: 'id',
     orgId: 'orgId',
     name: 'name',
+    code: 'code',
+    description: 'description',
     version: 'version',
     status: 'status'
 };
@@ -227,15 +271,24 @@ exports.SalaryRuleScalarFieldEnum = {
     computationType: 'computationType',
     sequence: 'sequence',
     value: 'value',
+    amount: 'amount',
+    percentage: 'percentage',
+    percentageBase: 'percentageBase',
+    formula: 'formula',
     dependsOn: 'dependsOn',
     status: 'status'
 };
 exports.PayrunScalarFieldEnum = {
     id: 'id',
     orgId: 'orgId',
+    name: 'name',
     periodStart: 'periodStart',
     periodEnd: 'periodEnd',
     status: 'status',
+    totalGross: 'totalGross',
+    totalNet: 'totalNet',
+    warningsCount: 'warningsCount',
+    salaryStructureId: 'salaryStructureId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
@@ -249,15 +302,23 @@ exports.PayslipScalarFieldEnum = {
     id: 'id',
     payrunId: 'payrunId',
     employeeId: 'employeeId',
+    contractId: 'contractId',
+    payslipNumber: 'payslipNumber',
+    workedDays: 'workedDays',
+    basicWage: 'basicWage',
     grossAmount: 'grossAmount',
     netAmount: 'netAmount',
     status: 'status',
+    warningMessage: 'warningMessage',
+    pdfPath: 'pdfPath',
+    sentEmail: 'sentEmail',
     createdAt: 'createdAt'
 };
 exports.PayslipLineScalarFieldEnum = {
     id: 'id',
     payslipId: 'payslipId',
     ruleCode: 'ruleCode',
+    name: 'name',
     category: 'category',
     amount: 'amount',
     sequence: 'sequence',

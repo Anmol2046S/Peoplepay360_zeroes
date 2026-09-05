@@ -36,8 +36,11 @@ const requirePermission = (requiredPermission) => {
         if (!request.user) {
             throw new errors_1.UnauthorizedError();
         }
-        if (!request.user.permissions.includes(requiredPermission)) {
-            throw new errors_1.ForbiddenError(`Missing required permission: ${requiredPermission}`);
+        const userPerms = request.user.permissions || [];
+        const required = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
+        const hasPerm = required.some((p) => userPerms.includes(p));
+        if (!hasPerm) {
+            throw new errors_1.ForbiddenError(`Missing required permission: ${required.join(' or ')}`);
         }
     };
 };

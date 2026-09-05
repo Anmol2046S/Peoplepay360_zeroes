@@ -7,7 +7,13 @@ const decimal_js_1 = require("decimal.js");
 class TimeOffService {
     async requestTimeOff(orgId, input) {
         const employee = await db_1.prisma.employee.findFirst({
-            where: { id: input.employeeId, orgId },
+            where: {
+                orgId,
+                OR: [
+                    { id: input.employeeId },
+                    { userId: input.employeeId }
+                ]
+            },
         });
         if (!employee)
             throw new errors_1.NotFoundError('Employee not found');
@@ -22,7 +28,7 @@ class TimeOffService {
         const allocation = await db_1.prisma.timeOffAllocation.findUnique({
             where: {
                 employeeId_typeId: {
-                    employeeId: input.employeeId,
+                    employeeId: employee.id,
                     typeId: input.typeId,
                 },
             },
@@ -36,7 +42,7 @@ class TimeOffService {
         }
         return db_1.prisma.timeOffRequest.create({
             data: {
-                employeeId: input.employeeId,
+                employeeId: employee.id,
                 typeId: input.typeId,
                 startDate,
                 endDate,

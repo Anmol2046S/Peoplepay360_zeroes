@@ -21,7 +21,6 @@ class PayrunService {
                     periodStart,
                     periodEnd,
                     status: 'DRAFT',
-                    createdBy,
                 },
             });
             // 2. Find all eligible contracts for this period
@@ -46,9 +45,7 @@ class PayrunService {
             const payrunEmployeesData = eligibleContracts.map((contract) => ({
                 payrunId: payrun.id,
                 employeeId: contract.employeeId,
-                contractId: contract.id,
-                structureId: contract.salaryStructureId,
-                status: 'DRAFT', // using generic string for now, mapped in schema
+                status: 'DRAFT',
             }));
             await tx.payrunEmployee.createMany({
                 data: payrunEmployeesData,
@@ -64,7 +61,7 @@ class PayrunService {
             where: { id, orgId },
             include: {
                 employees: {
-                    include: { employee: true, contract: true }
+                    include: { employee: { include: { contracts: true } } }
                 }
             },
         });
@@ -96,7 +93,7 @@ class PayrunService {
         }
         const updated = await db_1.prisma.payrun.update({
             where: { id },
-            data: { status: 'APPROVED', approvedBy },
+            data: { status: 'APPROVED' },
         });
         await (0, audit_1.logAudit)({
             orgId,
@@ -144,6 +141,45 @@ class PayrunService {
                 entityId: id,
             });
             return finalized;
+        });
+    }
+    async getMyPayslips(orgId, userId) {
+        const employee = await db_1.prisma.employee.findFirst({
+            where: {
+                orgId,
+                userId,
+            },
+        });
+        if (!employee) {
+            return [];
+        }
+        const payslips = await db_1.prisma.payslip.findMany({
+            where: {
+                employeeId: employee.id,
+            },
+            include: {
+                payrun: true,
+                lines: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+        return payslips.map((slip) => {
+            const gross = Number(slip.grossAmount || 0);
+            const net = Number(slip.netAmount || 0);
+            const deductions = Math.max(0, gross - net);
+            return {
+                id: slip.id,
+                period: slip.payrun?.periodStart
+                    ? new Date(slip.payrun.periodStart).toLocaleString('default', { month: 'long', year: 'numeric' })
+                    : 'Pay Period',
+                gross,
+                net,
+                deductions,
+                status: slip.status === 'FINALIZED' ? 'PAID' : slip.status,
+                date: slip.createdAt ? new Date(slip.createdAt).toISOString().split('T')[0] : '',
+            };
         });
     }
 }

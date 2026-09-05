@@ -1,0 +1,33 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_routes_1 = __importDefault(require("./auth.routes"));
+const user_routes_1 = __importDefault(require("./user.routes"));
+const employee_routes_1 = __importDefault(require("./employee.routes"));
+const contract_routes_1 = __importDefault(require("./contract.routes"));
+const schedule_routes_1 = __importDefault(require("./schedule.routes"));
+const attendance_routes_1 = __importDefault(require("./attendance.routes"));
+const timeOff_routes_1 = __importDefault(require("./timeOff.routes"));
+const salaryStructure_routes_1 = __importDefault(require("./salaryStructure.routes"));
+const salaryRule_routes_1 = __importDefault(require("./salaryRule.routes"));
+const payrun_routes_1 = __importDefault(require("./payrun.routes"));
+const payslip_routes_1 = __importDefault(require("./payslip.routes"));
+const dashboard_routes_1 = __importDefault(require("./dashboard.routes"));
+const router = (0, express_1.Router)();
+router.use('/auth', auth_routes_1.default);
+router.use('/users', user_routes_1.default);
+router.use('/employees', employee_routes_1.default);
+router.use('/contracts', contract_routes_1.default);
+router.use('/schedules', schedule_routes_1.default);
+router.use('/attendance', attendance_routes_1.default);
+router.use('/time-off', timeOff_routes_1.default);
+router.use('/salary-structures', salaryStructure_routes_1.default);
+router.use('/salary-rules', salaryRule_routes_1.default);
+router.use('/payruns', payrun_routes_1.default);
+router.use('/payslips', payslip_routes_1.default);
+router.use('/dashboard', dashboard_routes_1.default);
+exports.default = router;
+//# sourceMappingURL=index.js.map

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Loader2, User, Users } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User, Users, ShieldCheck, Calculator, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { Role } from '../contexts/AuthContext';
 
@@ -10,26 +11,35 @@ const features = [
   { title: 'Employee self-service', desc: 'Payslips, leaves, and profiles — always accessible.' },
 ];
 
+const roleButtons: { role: Role; label: string; icon: any; colorCls: string; bgCls: string }[] = [
+  { role: 'ADMIN',              label: 'System Admin',       icon: Crown, colorCls: 'text-purple-600 dark:text-purple-400', bgCls: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800/40' },
+  { role: 'HR_MANAGER',         label: 'HR Manager',         icon: Users, colorCls: 'text-indigo-600 dark:text-indigo-400', bgCls: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/40' },
+  { role: 'HR_PAYROLL_USER',    label: 'Payroll User',       icon: Calculator, colorCls: 'text-blue-600 dark:text-blue-400', bgCls: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/40' },
+  { role: 'HR_PAYROLL_MANAGER', label: 'Payroll Manager',    icon: ShieldCheck, colorCls: 'text-emerald-600 dark:text-emerald-400', bgCls: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/40' },
+  { role: 'EMPLOYEE',           label: 'Employee',           icon: User, colorCls: 'text-amber-600 dark:text-amber-400', bgCls: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/40' },
+];
+
 const Login = () => {
-  const { login } = useAuth();
+  const { login, isLoggedIn } = useAuth();
   const [showPwd, setShowPwd]   = useState(false);
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading]   = useState(false);
   const [loadingRole, setLoadingRole] = useState<Role | null>(null);
 
+  if (isLoggedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const handleDemoLogin = async (role: Role) => {
     setLoadingRole(role);
-    await new Promise(r => setTimeout(r, 600));
-    login(role);
+    await login(role);
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    // Default to HR for manual login in demo mode
-    login('HR');
+    await login('HR_MANAGER');
   };
 
   return (
@@ -120,24 +130,27 @@ const Login = () => {
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Sign in to your workspace.</p>
           </div>
           
-          {/* Demo Logins */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              onClick={() => handleDemoLogin('HR')}
-              disabled={!!loadingRole}
-              className="flex flex-col items-center gap-2 p-3 border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-900/10 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors"
-            >
-              {loadingRole === 'HR' ? <Loader2 size={20} className="animate-spin text-indigo-500" /> : <Users size={20} className="text-indigo-600 dark:text-indigo-400" />}
-              <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Login as HR</span>
-            </button>
-            <button
-              onClick={() => handleDemoLogin('EMPLOYEE')}
-              disabled={!!loadingRole}
-              className="flex flex-col items-center gap-2 p-3 border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-colors"
-            >
-              {loadingRole === 'EMPLOYEE' ? <Loader2 size={20} className="animate-spin text-emerald-500" /> : <User size={20} className="text-emerald-600 dark:text-emerald-400" />}
-              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Login as Employee</span>
-            </button>
+          {/* Demo Logins for All 5 Roles */}
+          <div className="grid grid-cols-2 gap-2.5 mb-6">
+            {roleButtons.map((rb) => {
+              const Icon = rb.icon;
+              const isSpinning = loadingRole === rb.role;
+              return (
+                <button
+                  key={rb.role}
+                  onClick={() => handleDemoLogin(rb.role)}
+                  disabled={!!loadingRole}
+                  className={`flex flex-col items-center gap-1.5 p-2.5 border ${rb.bgCls} hover:opacity-90 rounded-xl transition-all ${rb.role === 'ADMIN' ? 'col-span-2' : ''}`}
+                >
+                  {isSpinning ? (
+                    <Loader2 size={18} className={`animate-spin ${rb.colorCls}`} />
+                  ) : (
+                    <Icon size={18} className={rb.colorCls} />
+                  )}
+                  <span className={`text-xs font-semibold ${rb.colorCls}`}>Login as {rb.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="relative flex items-center py-2 mb-6">

@@ -9,11 +9,17 @@ class AttendanceController {
         this.attendanceService = new attendance_service_1.AttendanceService();
     }
     checkIn = async (request, reply) => {
-        const input = attendance_schema_1.CheckInSchema.parse(request.body);
+        const body = (request.body || {});
+        const employeeId = body.employeeId || request.user?.id || '';
+        const date = body.date || new Date().toISOString();
+        const checkInTime = body.checkIn || new Date().toISOString();
+        const input = attendance_schema_1.CheckInSchema.parse({
+            employeeId,
+            date,
+            checkIn: checkInTime,
+        });
         const orgId = request.user.orgId;
-        // In a real app, an employee role should only be able to check-in for themselves.
-        // Assuming higher roles can create for anyone.
-        const result = await this.attendanceService.checkIn(orgId, input);
+        const result = await this.attendanceService.checkIn(orgId, input, request.user.id);
         return reply.status(201).send({ success: true, data: result });
     };
     checkOut = async (request, reply) => {
@@ -25,8 +31,22 @@ class AttendanceController {
     };
     getByEmployee = async (request, reply) => {
         const orgId = request.user.orgId;
-        const { employeeId } = request.params;
-        const records = await this.attendanceService.getByEmployee(orgId, employeeId);
+        let { employeeId } = request.params;
+        if (!employeeId || employeeId === 'undefined' || employeeId === 'me') {
+            employeeId = request.user.id;
+        }
+        const records = await this.attendanceService.getByEmployee(orgId, employeeId, request.user.id);
+        return reply.send({ success: true, data: records });
+    };
+    getAll = async (request, reply) => {
+        const orgId = request.user.orgId;
+        const permissions = request.user?.permissions || [];
+        // If caller is Employee (has ATTENDANCE_SELF but not ATTENDANCE_READ), scope to own attendance records
+        if (permissions.includes('ATTENDANCE_SELF') && !permissions.includes('ATTENDANCE_READ')) {
+            const records = await this.attendanceService.getByEmployee(orgId, request.user.id, request.user.id);
+            return reply.send({ success: true, data: records });
+        }
+        const records = await this.attendanceService.getAll(orgId);
         return reply.send({ success: true, data: records });
     };
 }

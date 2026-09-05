@@ -8,6 +8,101 @@ datasource db {
 }
 
 // -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+enum SystemRole {
+  SUPER_ADMIN
+  HR_MANAGER
+  HR_PAYROLL_USER
+  HR_PAYROLL_MANAGER
+  DEPARTMENT_MANAGER
+  EMPLOYEE
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  RUNNING
+  EXPIRED
+  TERMINATED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  OVERTIME
+}
+
+enum TimeOffUnit {
+  DAYS
+  HOURS
+}
+
+enum TimeOffApprovalType {
+  MANAGER
+  OFFICER
+  NO_VALIDATION
+}
+
+enum TimeOffRequestStatus {
+  DRAFT
+  PENDING
+  TO_APPROVE
+  APPROVED
+  REJECTED
+  REFUSED
+}
+
+enum TimeOffAllocationStatus {
+  DRAFT
+  TO_APPROVE
+  APPROVED
+  REFUSED
+}
+
+enum SalaryRuleCategory {
+  BASIC
+  ALLOWANCE
+  GROSS
+  DEDUCTION
+  NET
+}
+
+enum ComputationMethod {
+  FIXED
+  PERCENTAGE
+  FORMULA
+}
+
+enum PayrunStatus {
+  DRAFT
+  CALCULATING
+  COMPUTED
+  VALIDATING
+  VALIDATED
+  READY_FOR_APPROVAL
+  APPROVED
+  FINALIZED
+  PAID
+}
+
+enum PayslipStatus {
+  DRAFT
+  FINALIZED
+  DONE
+  CANCELLED
+}
+
+// -----------------------------------------------------------------------------
 // CORE & MULTI-TENANCY
 // -----------------------------------------------------------------------------
 model Organization {
@@ -18,6 +113,7 @@ model Organization {
 
   users             User[]
   employees         Employee[]
+  departments       Department[]
   timeOffTypes      TimeOffType[]
   salaryStructures  SalaryStructure[]
   payruns           Payrun[]
@@ -25,18 +121,23 @@ model Organization {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  orgId        String
-  email        String   @unique
-  passwordHash String
-  roleId       String
-  status       String   @default("ACTIVE")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                   String        @id @default(cuid())
+  orgId                String
+  email                String        @unique
+  passwordHash         String
+  name                 String        @default("User")
+  roleId               String
+  roleName             SystemRole    @default(EMPLOYEE)
+  status               AccountStatus @default(ACTIVE)
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   organization Organization @relation(fields: [orgId], references: [id])
   role         Role         @relation(fields: [roleId], references: [id])
   employees    Employee[]   @relation("UserEmployees")
+  auditLogs    AuditLog[]
 }
 
 model Role {
@@ -48,21 +149,41 @@ model Role {
   users User[]
 }
 
+model Department {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  employees    Employee[]
+  contracts    EmploymentContract[]
+}
+
 // -----------------------------------------------------------------------------
 // HR CORE (Employee, Contract, Schedule)
 // -----------------------------------------------------------------------------
 model Employee {
-  id        String   @id @default(cuid())
-  orgId     String
-  userId    String?
-  firstName String
-  lastName  String
-  status    String   @default("ACTIVE") // ACTIVE, TERMINATED
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  orgId            String
+  userId           String?
+  departmentId     String?
+  firstName        String
+  lastName         String
+  jobTitle         String?
+  phoneNumber      String?
+  address          String?
+  emergencyContact String?
+  status           String   @default("ACTIVE") // ACTIVE, TERMINATED
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   organization       Organization         @relation(fields: [orgId], references: [id])
   user               User?                @relation("UserEmployees", fields: [userId], references: [id])
+  department         Department?          @relation(fields: [departmentId], references: [id])
   contracts          EmploymentContract[]
   attendance         Attendance[]
   timeOffAllocations TimeOffAllocation[]
@@ -74,18 +195,24 @@ model Employee {
 }
 
 model EmploymentContract {
-  id               String    @id @default(cuid())
-  employeeId       String
+  id                String         @id @default(cuid())
+  contractReference String?
+  employeeId        String
   salaryStructureId String
-  startDate        DateTime
-  endDate          DateTime?
-  status           String    @default("ACTIVE") // ACTIVE, EXPIRED, TERMINATED
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  departmentId      String?
+  startDate         DateTime
+  endDate           DateTime?
+  monthlyWage       Decimal?
+  notes             String?
+  status            ContractStatus @default(ACTIVE)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  employee        Employee         @relation(fields: [employeeId], references: [id])
-  salaryStructure SalaryStructure  @relation(fields: [salaryStructureId], references: [id])
+  employee         Employee          @relation(fields: [employeeId], references: [id])
+  department       Department?       @relation(fields: [departmentId], references: [id])
+  salaryStructure  SalaryStructure   @relation(fields: [salaryStructureId], references: [id])
   workingSchedules WorkingSchedule[]
+  payslips         Payslip[]
 
   @@index([employeeId])
 }
@@ -95,6 +222,8 @@ model WorkingSchedule {
   contractId String
   days       String[] // e.g., ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
   hours      Decimal  // Standard daily hours
+  startTime  String?  @default("09:00")
+  endTime    String?  @default("17:00")
 
   contract EmploymentContract @relation(fields: [contractId], references: [id])
 }
@@ -103,14 +232,17 @@ model WorkingSchedule {
 // ATTENDANCE & TIME-OFF
 // -----------------------------------------------------------------------------
 model Attendance {
-  id          String    @id @default(cuid())
-  employeeId  String
-  date        DateTime  @db.Date
-  checkIn     DateTime
-  checkOut    DateTime?
-  workedHours Decimal?
-  status      String    @default("PRESENT") // PRESENT, ABSENT, HALF_DAY
-  createdAt   DateTime  @default(now())
+  id            String   @id @default(cuid())
+  employeeId    String
+  date          DateTime @db.Date
+  checkIn       DateTime
+  checkOut      DateTime?
+  workedHours   Decimal?
+  overtimeHours Decimal? @default(0)
+  status        String   @default("PRESENT") // PRESENT, ABSENT, HALF_DAY, LATE, OVERTIME
+  notes         String?
+  isManualEdit  Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id])
 
@@ -118,69 +250,92 @@ model Attendance {
 }
 
 model TimeOffType {
-  id     String  @id @default(cuid())
-  orgId  String
-  name   String
-  isPaid Boolean @default(true)
+  id                 String              @id @default(cuid())
+  orgId              String
+  name               String
+  isPaid             Boolean             @default(true)
+  unit               TimeOffUnit         @default(DAYS)
+  requiresAllocation Boolean             @default(true)
+  approvalType       TimeOffApprovalType @default(MANAGER)
+  displayColor       String              @default("#3B82F6")
 
-  organization       Organization        @relation(fields: [orgId], references: [id])
-  allocations        TimeOffAllocation[]
-  requests           TimeOffRequest[]
+  organization Organization        @relation(fields: [orgId], references: [id])
+  allocations  TimeOffAllocation[]
+  requests     TimeOffRequest[]
 }
 
 model TimeOffAllocation {
-  id         String   @id @default(cuid())
-  employeeId String
-  typeId     String
-  totalDays  Decimal
-  usedDays   Decimal  @default(0)
+  id            String                  @id @default(cuid())
+  employeeId    String
+  typeId        String
+  totalDays     Decimal
+  usedDays      Decimal                 @default(0)
+  remainingDays Decimal                 @default(0)
+  validityYear  Int                     @default(2026)
+  description   String?
+  status        TimeOffAllocationStatus @default(APPROVED)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
 
-  employee    Employee    @relation(fields: [employeeId], references: [id])
-  timeOffType TimeOffType @relation(fields: [typeId], references: [id])
+  employee    Employee         @relation(fields: [employeeId], references: [id])
+  timeOffType TimeOffType      @relation(fields: [typeId], references: [id])
+  requests    TimeOffRequest[]
 
   @@unique([employeeId, typeId])
 }
 
 model TimeOffRequest {
-  id         String   @id @default(cuid())
-  employeeId String
-  typeId     String
-  startDate  DateTime @db.Date
-  endDate    DateTime @db.Date
-  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String               @id @default(cuid())
+  employeeId   String
+  typeId       String
+  allocationId String?
+  startDate    DateTime             @db.Date
+  endDate      DateTime             @db.Date
+  durationDays Decimal              @default(1)
+  reason       String?
+  approverName String?
+  status       TimeOffRequestStatus @default(PENDING)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
-  employee    Employee    @relation(fields: [employeeId], references: [id])
-  timeOffType TimeOffType @relation(fields: [typeId], references: [id])
+  employee    Employee           @relation(fields: [employeeId], references: [id])
+  timeOffType TimeOffType        @relation(fields: [typeId], references: [id])
+  allocation  TimeOffAllocation? @relation(fields: [allocationId], references: [id])
 }
 
 // -----------------------------------------------------------------------------
 // PAYROLL ENGINE (Structures, Rules)
 // -----------------------------------------------------------------------------
 model SalaryStructure {
-  id        String   @id @default(cuid())
-  orgId     String
-  name      String
-  version   Int      @default(1)
-  status    String   @default("ACTIVE")
+  id          String        @id @default(cuid())
+  orgId       String
+  name        String
+  code        String?
+  description String?
+  version     Int           @default(1)
+  status      AccountStatus @default(ACTIVE)
 
   organization Organization         @relation(fields: [orgId], references: [id])
   contracts    EmploymentContract[]
   rules        SalaryRule[]
+  payruns      Payrun[]
 }
 
 model SalaryRule {
-  id              String   @id @default(cuid())
-  structureId     String
-  code            String
-  name            String
-  category        String   // BASIC, ALLOWANCE, DEDUCTION, GROSS, NET
-  computationType String   // FIXED, PERCENTAGE, FORMULA
-  sequence        Int
-  value           Decimal? // Fixed amount, or percentage
-  dependsOn       String[] // e.g. ["BASIC", "ALLOWANCE"] for formulas
-  status          String   @default("ACTIVE")
+  id                String             @id @default(cuid())
+  structureId       String
+  code              String
+  name              String
+  category          SalaryRuleCategory @default(BASIC)
+  computationType   ComputationMethod  @default(FIXED)
+  sequence          Int
+  value             Decimal?           // Fixed amount, or percentage
+  amount            Decimal?           // For FIXED method
+  percentage        Decimal?           // For PERCENTAGE method
+  percentageBase    String?            // WAGE, BASIC, GROSS
+  formula           String?            // Dynamic formula expression
+  dependsOn         String[]           // e.g. ["BASIC", "ALLOWANCE"] for formulas
+  status            AccountStatus      @default(ACTIVE)
 
   structure SalaryStructure @relation(fields: [structureId], references: [id])
 
@@ -191,17 +346,23 @@ model SalaryRule {
 // PAYRUN & PAYSLIP
 // -----------------------------------------------------------------------------
 model Payrun {
-  id          String   @id @default(cuid())
-  orgId       String
-  periodStart DateTime @db.Date
-  periodEnd   DateTime @db.Date
-  status      String   @default("DRAFT") // DRAFT, CALCULATING, VALIDATING, READY_FOR_APPROVAL, APPROVED, FINALIZED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String       @id @default(cuid())
+  orgId             String
+  name              String?
+  periodStart       DateTime     @db.Date
+  periodEnd         DateTime     @db.Date
+  status            PayrunStatus @default(DRAFT)
+  totalGross        Decimal      @default(0)
+  totalNet          Decimal      @default(0)
+  warningsCount     Int          @default(0)
+  salaryStructureId String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
-  organization Organization     @relation(fields: [orgId], references: [id])
-  employees    PayrunEmployee[]
-  payslips     Payslip[]
+  organization    Organization     @relation(fields: [orgId], references: [id])
+  salaryStructure SalaryStructure? @relation(fields: [salaryStructureId], references: [id])
+  employees       PayrunEmployee[]
+  payslips        Payslip[]
 }
 
 model PayrunEmployee {
@@ -217,16 +378,24 @@ model PayrunEmployee {
 }
 
 model Payslip {
-  id          String   @id @default(cuid())
-  payrunId    String
-  employeeId  String
-  grossAmount Decimal
-  netAmount   Decimal
-  status      String   @default("DRAFT") // DRAFT, FINALIZED
-  createdAt   DateTime @default(now())
+  id             String        @id @default(cuid())
+  payrunId       String
+  employeeId     String
+  contractId     String?
+  payslipNumber  String?
+  workedDays     Decimal       @default(22)
+  basicWage      Decimal       @default(0)
+  grossAmount    Decimal       @default(0)
+  netAmount      Decimal       @default(0)
+  status         PayslipStatus @default(DRAFT)
+  warningMessage String?
+  pdfPath        String?
+  sentEmail      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
 
-  payrun   Payrun        @relation(fields: [payrunId], references: [id])
-  employee Employee      @relation(fields: [employeeId], references: [id])
+  payrun   Payrun              @relation(fields: [payrunId], references: [id])
+  employee Employee            @relation(fields: [employeeId], references: [id])
+  contract EmploymentContract? @relation(fields: [contractId], references: [id])
   lines    PayslipLine[]
 
   @@unique([payrunId, employeeId])
@@ -236,6 +405,7 @@ model PayslipLine {
   id        String   @id @default(cuid())
   payslipId String
   ruleCode  String
+  name      String?
   category  String
   amount    Decimal
   sequence  Int
@@ -258,4 +428,5 @@ model AuditLog {
   metadata  String?  // JSON string of before/after
 
   organization Organization @relation(fields: [orgId], references: [id])
+  user         User?        @relation(fields: [actorId], references: [id])
 }
