@@ -44,6 +44,32 @@ const buildApp = async () => {
 
   // Placeholder for API routes
   app.register(async (api) => {
+    // DEV ONLY: Generate a token for Sarah Admin to bypass login on frontend
+    api.get('/dev/token', async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const jwt = (await import('jsonwebtoken')).default || (await import('jsonwebtoken'));
+      
+      const adminUser = await prisma.user.findFirst({
+        where: { role: { name: 'SUPER_ADMIN' } },
+        include: { role: true }
+      });
+
+      if (!adminUser) {
+        return reply.code(404).send({ error: 'Super Admin not found in DB. Did you run the seed?' });
+      }
+
+      const secret = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
+      const token = jwt.sign({
+        id: adminUser.id,
+        orgId: adminUser.orgId,
+        email: adminUser.email,
+        roleId: adminUser.roleId,
+        permissions: adminUser.role.permissions
+      }, secret, { expiresIn: '1d' });
+
+      return { token, user: { email: adminUser.email, name: 'Sarah Admin' } };
+    });
+
     const { default: authRoutes } = await import('./modules/auth/auth.routes');
     const { default: employeeRoutes } = await import('./modules/employees/employee.routes');
     const { default: contractRoutes } = await import('./modules/contracts/contract.routes');
@@ -54,6 +80,7 @@ const buildApp = async () => {
     const { default: payrunRoutes } = await import('./modules/payroll/payruns/payrun.routes');
     const { default: engineRoutes } = await import('./modules/payroll/engine/engine.routes');
     const { default: reportRoutes } = await import('./modules/reports/report.routes');
+    const { default: dashboardRoutes } = await import('./modules/dashboard/dashboard.routes');
     
     api.register(authRoutes, { prefix: '/auth' });
     api.register(employeeRoutes, { prefix: '/employees' });
@@ -65,6 +92,7 @@ const buildApp = async () => {
     api.register(payrunRoutes, { prefix: '/payroll/payruns' });
     api.register(engineRoutes, { prefix: '/payroll/engine' });
     api.register(reportRoutes, { prefix: '/reports' });
+    api.register(dashboardRoutes, { prefix: '/dashboard' });
     
     api.get('/', async () => {
       return { message: 'PeoplePay360 API v1' };
