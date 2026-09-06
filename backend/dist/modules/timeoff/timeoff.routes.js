@@ -5,6 +5,9 @@ const timeoff_controller_1 = require("./timeoff.controller");
 const auth_1 = require("../../middleware/auth");
 async function timeOffRoutes(app) {
     const timeOffController = new timeoff_controller_1.TimeOffController();
+    app.get('/requests', { preHandler: [(0, auth_1.requirePermission)(['TIMEOFF_REQUEST', 'TIMEOFF_REQUEST_SELF', 'TIMEOFF_APPROVE'])] }, timeOffController.getRequests);
+    app.get('/types', { preHandler: [(0, auth_1.requirePermission)(['TIMEOFF_REQUEST', 'TIMEOFF_REQUEST_SELF', 'TIMEOFF_APPROVE'])] }, timeOffController.getTypes);
+    app.get('/allocations', { preHandler: [(0, auth_1.requirePermission)(['TIMEOFF_REQUEST', 'TIMEOFF_REQUEST_SELF', 'TIMEOFF_APPROVE'])] }, timeOffController.getAllocations);
     app.post('/requests', { preHandler: [(0, auth_1.requirePermission)(['TIMEOFF_REQUEST', 'TIMEOFF_REQUEST_SELF'])] }, timeOffController.requestTimeOff);
     app.post('/requests/:id/approve', { preHandler: [(0, auth_1.requirePermission)('TIMEOFF_APPROVE')] }, timeOffController.approve);
     app.post('/requests/:id/reject', { preHandler: [(0, auth_1.requirePermission)('TIMEOFF_APPROVE')] }, timeOffController.reject);

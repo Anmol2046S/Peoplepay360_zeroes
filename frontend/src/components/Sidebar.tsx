@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Clock, CalendarOff,
-  Calculator, FileText, CheckSquare, Settings, LogOut, UserCheck, Layers, Award
+  Calculator, FileText, Settings, LogOut, UserCheck, Layers, Award
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
@@ -9,8 +9,8 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Role } from '../contexts/AuthContext';
 
 const ALL_ROLES: Role[] = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER', 'EMPLOYEE'];
-const HR_MANAGERS: Role[] = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER'];
-const PAYROLL_ROLES: Role[] = ['ADMIN', 'HR_PAYROLL_USER', 'HR_PAYROLL_MANAGER'];
+const HR_MANAGERS: Role[] = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'];
+const PAYROLL_ROLES: Role[] = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'];
 const ADMIN_ONLY: Role[] = ['ADMIN'];
 
 const navGroups = [
@@ -42,9 +42,8 @@ const navGroups = [
   {
     label: 'Admin',
     items: [
-      { label: 'Users & RBAC', path: '/users',      icon: UserCheck,  roles: ADMIN_ONLY },
-      { label: 'Approvals',    path: '/approvals',  icon: CheckSquare,roles: HR_MANAGERS },
-      { label: 'Settings',     path: '/settings',   icon: Settings,   roles: ALL_ROLES },
+      { label: 'Users & RBAC', path: '/users', icon: UserCheck, roles: ADMIN_ONLY },
+      { label: 'Settings', path: '/settings', icon: Settings, roles: ALL_ROLES },
     ],
   },
 ];
@@ -81,7 +80,7 @@ const Sidebar = () => {
 
           return (
             <div key={group.label} className={gi > 0 ? 'mt-5' : ''}>
-              <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest px-2.5 mb-1.5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest px-2.5 mb-1.5">
                 {group.label}
               </p>
               <div className="space-y-0.5">
@@ -96,11 +95,12 @@ const Sidebar = () => {
                     >
                       <NavLink
                         to={item.path}
+                        end={true}
                         className={({ isActive }) => clsx(
                           'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
                           isActive
-                            ? 'bg-indigo-600 text-white'
-                            : 'text-gray-400 hover:text-gray-100 hover:bg-white/[0.06]'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-gray-300 hover:text-white hover:bg-white/[0.08]'
                         )}
                       >
                         {({ isActive }) => (
@@ -130,10 +130,10 @@ const Sidebar = () => {
             {user?.name ? initials(user.name) : 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-200 group-hover:text-red-400 truncate transition-colors">{user?.name || '—'}</p>
-            <p className="text-xs text-gray-600 group-hover:text-red-500/70 truncate transition-colors">{roleTitles[role] || role}</p>
+            <p className="text-sm font-semibold text-gray-100 group-hover:text-red-400 truncate transition-colors">{user?.name || '—'}</p>
+            <p className="text-xs text-gray-400 group-hover:text-red-400/80 truncate transition-colors">{roleTitles[role] || role}</p>
           </div>
-          <LogOut size={16} className="text-gray-600 group-hover:text-red-400 flex-shrink-0 transition-colors" />
+          <LogOut size={16} className="text-gray-400 group-hover:text-red-400 flex-shrink-0 transition-colors" />
         </button>
       </div>
     </aside>

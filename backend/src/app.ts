@@ -47,7 +47,7 @@ const buildApp = async () => {
     crossOriginResourcePolicy: false,
   });
   await app.register(rateLimit, {
-    max: 100, // 100 requests per minute
+    max: 10000, // 10000 requests per minute to support live sync & polling
     timeWindow: '1 minute',
   });
 

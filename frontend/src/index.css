@@ -17,12 +17,45 @@
   body {
     font-family: 'Inter', system-ui, sans-serif;
     background-color: var(--color-workspace);
-    color: #111827;
+    color: #0f172a;
   }
 
   .dark body {
     background-color: #0b0f1a;
-    color: #f1f5f9;
+    color: #f8fafc;
+  }
+
+  /* Form Inputs, Selects, and Textareas High Contrast Fixes */
+  input, select, textarea {
+    color: inherit;
+  }
+
+  /* Fix for HTML <option> text visibility in dark & light modes */
+  option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .dark option {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+  }
+
+  /* High Contrast Input Placeholders */
+  ::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+  }
+  .dark ::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+  }
+
+  /* Table Headers Contrast */
+  th {
+    color: #334155;
+  }
+  .dark th {
+    color: #cbd5e1;
   }
 }
 

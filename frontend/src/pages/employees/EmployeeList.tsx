@@ -73,18 +73,20 @@ const EmployeeList = () => {
   const [status,    setStatus]    = useState('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  const fetchEmployees = async () => {
+    try {
+      const res = await api.get('/employees');
+      const raw = res.data?.data ?? res.data?.employees ?? (Array.isArray(res.data) ? res.data : []);
+      setEmployees(Array.isArray(raw) && raw.length > 0 ? raw : MOCK);
+    } catch {
+      setEmployees(MOCK);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get('/employees');
-        const raw = res.data?.data ?? res.data?.employees ?? (Array.isArray(res.data) ? res.data : []);
-        setEmployees(Array.isArray(raw) && raw.length > 0 ? raw : MOCK);
-      } catch {
-        setEmployees(MOCK);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchEmployees();
   }, []);
 
   // Ensure employees is an array before filtering
@@ -198,7 +200,7 @@ const EmployeeList = () => {
         ) : (
           <motion.div variants={page} initial="hidden" animate="show" className="divide-y divide-gray-50 dark:divide-white/[0.04]">
             {filtered.map((emp, idx) => (
-              <motion.div key={emp.id} variants={row}>
+              <motion.div key={`emp-${emp.id}-${idx}`} variants={row}>
                 <Link
                   to={`/employees/${emp.id}`}
                   className="row-hover px-5 py-3.5 grid grid-cols-12 gap-4 items-center"
@@ -255,7 +257,12 @@ const EmployeeList = () => {
       <AddEmployeeModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSuccess={(emp) => setEmployees((prev) => [emp, ...prev])}
+        onSuccess={(emp) => {
+          if (emp) {
+            setEmployees((prev) => [emp, ...prev.filter(e => e.id !== emp.id)]);
+          }
+          fetchEmployees();
+        }}
       />
     </div>
   );

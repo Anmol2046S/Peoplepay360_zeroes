@@ -22,7 +22,15 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 
   const toast = (message: string, type: ToastType = 'success') => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts(prev => {
+      // Prevent duplicate toast if identical message was triggered within last 2 seconds
+      const existsRecent = prev.some(t => t.message === message && (id - t.id) < 2000);
+      if (existsRecent) return prev;
+      // Cap visible toasts to max 3
+      const updated = [...prev, { id, message, type }];
+      return updated.slice(-3);
+    });
+
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 3500);

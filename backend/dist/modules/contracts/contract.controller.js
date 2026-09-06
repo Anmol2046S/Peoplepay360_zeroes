@@ -8,6 +8,17 @@ class ContractController {
     constructor() {
         this.contractService = new contract_service_1.ContractService();
     }
+    getAll = async (request, reply) => {
+        const orgId = request.user.orgId;
+        const contracts = await this.contractService.getAll(orgId);
+        return reply.send({ success: true, data: contracts });
+    };
+    getById = async (request, reply) => {
+        const orgId = request.user.orgId;
+        const { id } = request.params;
+        const contract = await this.contractService.getById(orgId, id);
+        return reply.send({ success: true, data: contract });
+    };
     create = async (request, reply) => {
         const input = contract_schema_1.CreateContractSchema.parse(request.body);
         const orgId = request.user.orgId;
@@ -19,6 +30,12 @@ class ContractController {
         const { employeeId } = request.params;
         const contracts = await this.contractService.getByEmployee(orgId, employeeId);
         return reply.send({ success: true, data: contracts });
+    };
+    update = async (request, reply) => {
+        const orgId = request.user.orgId;
+        const { id } = request.params;
+        const updated = await this.contractService.update(orgId, id, request.body);
+        return reply.send({ success: true, data: updated });
     };
 }
 exports.ContractController = ContractController;

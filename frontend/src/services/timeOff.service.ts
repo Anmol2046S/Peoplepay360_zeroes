@@ -63,7 +63,11 @@ export const timeOffService = {
     return data;
   },
   async updateAllocation(id: string, payload: Partial<TimeOffAllocation>): Promise<ApiResponse<TimeOffAllocation>> {
-    const { data } = await apiClient.put<ApiResponse<TimeOffAllocation>>(`/time-off/allocations/${id}`, payload);
+    const { data } = await apiClient.patch<ApiResponse<TimeOffAllocation>>(`/time-off/allocations/${id}`, payload);
+    return data;
+  },
+  async deleteAllocation(id: string): Promise<ApiResponse<any>> {
+    const { data } = await apiClient.delete<ApiResponse<any>>(`/time-off/allocations/${id}`);
     return data;
   },
 };

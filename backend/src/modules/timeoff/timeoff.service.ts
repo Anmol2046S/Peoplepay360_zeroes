@@ -4,6 +4,177 @@ import { NotFoundError, ValidationError, InvalidStateTransitionError } from '../
 import { Decimal } from 'decimal.js';
 
 export class TimeOffService {
+  async getRequests(orgId: string, query?: { status?: string; employeeId?: string }) {
+    const where: any = {
+      employee: { orgId }
+    };
+    if (query?.status) {
+      where.status = query.status;
+    }
+    if (query?.employeeId) {
+      where.OR = [
+        { employeeId: query.employeeId },
+        { employee: { userId: query.employeeId } }
+      ];
+    }
+    return prisma.timeOffRequest.findMany({
+      where,
+      include: {
+        employee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            jobTitle: true,
+            user: {
+              select: {
+                email: true,
+              }
+            },
+            department: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        },
+        timeOffType: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getTypes(orgId: string) {
+    let types = await prisma.timeOffType.findMany({
+      where: { orgId }
+    });
+
+    if (types.length === 0) {
+      await prisma.timeOffType.createMany({
+        data: [
+          { orgId, name: 'Paid Time Off', isPaid: true, displayColor: '#4F46E5' },
+          { orgId, name: 'Sick Leave', isPaid: true, displayColor: '#EF4444' },
+          { orgId, name: 'Casual Leave', isPaid: true, displayColor: '#F59E0B' },
+          { orgId, name: 'Unpaid Leave', isPaid: false, displayColor: '#6B7280' },
+        ]
+      });
+      types = await prisma.timeOffType.findMany({ where: { orgId } });
+    }
+
+    return types;
+  }
+
+  async getAllocations(orgId: string, employeeId?: string) {
+    const where: any = {
+      employee: { orgId }
+    };
+    if (employeeId) {
+      where.OR = [
+        { employeeId },
+        { employee: { userId: employeeId } }
+      ];
+    }
+    return prisma.timeOffAllocation.findMany({
+      where,
+      include: {
+        employee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            jobTitle: true,
+            user: {
+              select: {
+                email: true,
+              }
+            }
+          }
+        },
+        timeOffType: true
+      }
+    });
+  }
+
+  async createAllocation(orgId: string, data: any) {
+    const employee = await prisma.employee.findFirst({
+      where: {
+        orgId,
+        OR: [
+          { id: data.employeeId },
+          { userId: data.employeeId }
+        ]
+      }
+    });
+    if (!employee) throw new NotFoundError('Employee not found');
+
+    const total = new Decimal(data.totalDays || data.allocatedDays || 20);
+    const used = new Decimal(data.usedDays || data.takenDays || 0);
+    const remaining = total.minus(used);
+
+    const allocation = await prisma.timeOffAllocation.upsert({
+      where: {
+        employeeId_typeId: {
+          employeeId: employee.id,
+          typeId: data.typeId,
+        }
+      },
+      update: {
+        totalDays: total,
+        usedDays: used,
+        remainingDays: remaining,
+      },
+      create: {
+        employeeId: employee.id,
+        typeId: data.typeId,
+        totalDays: total,
+        usedDays: used,
+        remainingDays: remaining,
+      },
+      include: {
+        employee: { select: { id: true, firstName: true, lastName: true } },
+        timeOffType: true,
+      }
+    });
+
+    return allocation;
+  }
+
+  async updateAllocation(orgId: string, id: string, data: any) {
+    const existing = await prisma.timeOffAllocation.findFirst({
+      where: { id, employee: { orgId } }
+    });
+    if (!existing) throw new NotFoundError('Allocation record not found');
+
+    const total = data.totalDays !== undefined ? new Decimal(data.totalDays) : existing.totalDays;
+    const used = data.usedDays !== undefined ? new Decimal(data.usedDays) : existing.usedDays;
+    const remaining = total.minus(used);
+
+    return prisma.timeOffAllocation.update({
+      where: { id },
+      data: {
+        totalDays: total,
+        usedDays: used,
+        remainingDays: remaining,
+      },
+      include: {
+        employee: { select: { id: true, firstName: true, lastName: true } },
+        timeOffType: true,
+      }
+    });
+  }
+
+  async deleteAllocation(orgId: string, id: string) {
+    const existing = await prisma.timeOffAllocation.findFirst({
+      where: { id, employee: { orgId } }
+    });
+    if (!existing) throw new NotFoundError('Allocation record not found');
+
+    await prisma.timeOffAllocation.delete({
+      where: { id }
+    });
+    return { id, message: 'Allocation deleted successfully' };
+  }
+
   async requestTimeOff(orgId: string, input: RequestTimeOffInput) {
     const employee = await prisma.employee.findFirst({
       where: { 
@@ -23,11 +194,11 @@ export class TimeOffService {
       throw new ValidationError('Start date must be before or equal to end date');
     }
 
-    // A simple calculation for days (ignoring weekends for this hackathon version)
+    // A simple calculation for days
     const daysRequested = new Decimal((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
 
-    // Validate allocation
-    const allocation = await prisma.timeOffAllocation.findUnique({
+    // Validate allocation or create default
+    let allocation = await prisma.timeOffAllocation.findUnique({
       where: {
         employeeId_typeId: {
           employeeId: employee.id,
@@ -37,7 +208,15 @@ export class TimeOffService {
     });
 
     if (!allocation) {
-      throw new ValidationError('No time off allocation found for this type');
+      allocation = await prisma.timeOffAllocation.create({
+        data: {
+          employeeId: employee.id,
+          typeId: input.typeId,
+          totalDays: new Decimal(20),
+          usedDays: new Decimal(0),
+          remainingDays: new Decimal(20),
+        }
+      });
     }
 
     const available = new Decimal(allocation.totalDays).minus(allocation.usedDays);
@@ -49,8 +228,11 @@ export class TimeOffService {
       data: {
         employeeId: employee.id,
         typeId: input.typeId,
+        allocationId: allocation.id,
         startDate,
         endDate,
+        durationDays: daysRequested,
+        reason: input.reason,
         status: 'PENDING',
       },
     });
@@ -74,7 +256,7 @@ export class TimeOffService {
       const daysRequested = new Decimal((request.endDate.getTime() - request.startDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
 
       // Deduct balance atomically
-      const allocation = await tx.timeOffAllocation.findUnique({
+      let allocation = await tx.timeOffAllocation.findUnique({
         where: {
           employeeId_typeId: {
             employeeId: request.employeeId,
@@ -83,7 +265,17 @@ export class TimeOffService {
         },
       });
 
-      if (!allocation) throw new ValidationError('Allocation not found');
+      if (!allocation) {
+        allocation = await tx.timeOffAllocation.create({
+          data: {
+            employeeId: request.employeeId,
+            typeId: request.typeId,
+            totalDays: new Decimal(20),
+            usedDays: new Decimal(0),
+            remainingDays: new Decimal(20),
+          }
+        });
+      }
 
       const available = new Decimal(allocation.totalDays).minus(allocation.usedDays);
       if (available.lessThan(daysRequested)) {
@@ -94,6 +286,7 @@ export class TimeOffService {
         where: { id: allocation.id },
         data: {
           usedDays: new Decimal(allocation.usedDays).plus(daysRequested),
+          remainingDays: new Decimal(allocation.totalDays).minus(new Decimal(allocation.usedDays).plus(daysRequested)),
         },
       });
 

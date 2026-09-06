@@ -20,14 +20,14 @@ export const errorHandler = (
     });
   }
 
-  // Handle Fastify Validation Errors (Zod)
-  if (error.validation) {
+  // Handle Fastify Validation Errors & Zod Errors
+  if (error.validation || error.name === 'ZodError' || (error as any).issues) {
     return reply.status(400).send({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
-        message: 'Invalid request payload',
-        details: error.validation,
+        message: error.message || 'Invalid request payload',
+        details: (error as any).issues || error.validation,
         requestId: request.id,
       },
     });
@@ -37,8 +37,9 @@ export const errorHandler = (
     success: false,
     error: {
       code: 'INTERNAL_ERROR',
-      message: 'An unexpected error occurred.',
+      message: error.message || 'An unexpected error occurred.',
       requestId: request.id,
     },
   });
 };
+

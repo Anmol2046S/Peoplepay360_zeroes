@@ -184,7 +184,7 @@ export const UserManagementPage: React.FC = () => {
         </div>
       </div>
 
-      <Table columns={columns} data={filteredUsers} keyExtractor={(item) => item.id} isLoading={isLoading} />
+      <Table columns={columns} data={filteredUsers} keyExtractor={(item, idx) => `user-${item.id}-${idx}`} isLoading={isLoading} />
 
       <CreateUserModal
         isOpen={isModalOpen}

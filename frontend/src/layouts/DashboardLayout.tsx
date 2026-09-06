@@ -1,9 +1,11 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
+import { Breadcrumb } from '../components/common/Breadcrumb';
+import { BreadcrumbProvider } from '../contexts/BreadcrumbContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DashboardLayout = () => {
+const DashboardLayoutContent = () => {
   const location = useLocation();
 
   return (
@@ -12,10 +14,9 @@ const DashboardLayout = () => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar />
         <main className="flex-1 overflow-auto">
-          {/* Breadcrumbs */}
-          <div className="px-6 pt-5 pb-1 flex items-center text-xs font-medium text-gray-400 dark:text-gray-500 capitalize tracking-wide">
-            Home <span className="mx-2 text-gray-300 dark:text-gray-700">/</span> {location.pathname.split('/').filter(Boolean).join(' / ').replace(/-/g, ' ')}
-          </div>
+          {/* Accessible Interactive Breadcrumbs */}
+          <Breadcrumb />
+
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -31,6 +32,14 @@ const DashboardLayout = () => {
         </main>
       </div>
     </div>
+  );
+};
+
+const DashboardLayout = () => {
+  return (
+    <BreadcrumbProvider>
+      <DashboardLayoutContent />
+    </BreadcrumbProvider>
   );
 };
 

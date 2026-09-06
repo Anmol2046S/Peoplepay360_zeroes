@@ -1,7 +1,12 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Bell, Shield, Building, CreditCard } from 'lucide-react';
+import { useBreadcrumb } from '../contexts/BreadcrumbContext';
 
 export default function Settings() {
+  const { setExtraBreadcrumbs, clearExtraBreadcrumbs } = useBreadcrumb();
+  const [activeSection, setActiveSection] = useState('profile');
+
   const sections = [
     { id: 'profile', icon: User, title: 'My Profile', desc: 'Manage your personal information and preferences.' },
     { id: 'company', icon: Building, title: 'Company Details', desc: 'Update company address, logo, and structure.' },
@@ -9,6 +14,14 @@ export default function Settings() {
     { id: 'notifs', icon: Bell, title: 'Notifications', desc: 'Email and push notification preferences.' },
     { id: 'billing', icon: CreditCard, title: 'Billing & Plan', desc: 'Manage subscription and payment methods.' },
   ];
+
+  useEffect(() => {
+    const current = sections.find(s => s.id === activeSection);
+    if (current) {
+      setExtraBreadcrumbs([{ label: current.title }]);
+    }
+    return () => clearExtraBreadcrumbs();
+  }, [activeSection, setExtraBreadcrumbs, clearExtraBreadcrumbs]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto space-y-6 pb-8">
@@ -20,10 +33,14 @@ export default function Settings() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-1">
           {sections.map(s => (
-            <button key={s.id} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              s.id === 'profile' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]'
-            }`}>
-              <s.icon size={16} className={s.id === 'profile' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'} />
+            <button
+              key={s.id}
+              onClick={() => setActiveSection(s.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                s.id === activeSection ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 font-semibold' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]'
+              }`}
+            >
+              <s.icon size={16} className={s.id === activeSection ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'} />
               {s.title}
             </button>
           ))}

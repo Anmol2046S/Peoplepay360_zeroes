@@ -6,13 +6,14 @@ const errors_1 = require("../../../shared/errors");
 const audit_1 = require("../../../shared/audit");
 class PayrunService {
     async initialize(orgId, input, createdBy) {
-        const periodStart = new Date(input.periodStart);
-        const periodEnd = new Date(input.periodEnd);
+        const now = new Date();
+        const pStartRaw = input.periodStart ? new Date(input.periodStart) : new Date(now.getFullYear(), now.getMonth(), 1);
+        const pEndRaw = input.periodEnd ? new Date(input.periodEnd) : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const periodStart = isNaN(pStartRaw.getTime()) ? new Date(now.getFullYear(), now.getMonth(), 1) : pStartRaw;
+        const periodEnd = isNaN(pEndRaw.getTime()) ? new Date(now.getFullYear(), now.getMonth() + 1, 0) : pEndRaw;
         if (periodStart >= periodEnd) {
             throw new errors_1.ValidationError('Period start must be before period end');
         }
-        // Ensure we don't have overlapping payruns in DRAFT/CALCULATING states for safety
-        // For this hackathon, we allow multiple but it's risky. Let's just create it.
         return db_1.prisma.$transaction(async (tx) => {
             // 1. Create the base Payrun record
             const payrun = await tx.payrun.create({
@@ -24,8 +25,6 @@ class PayrunService {
                 },
             });
             // 2. Find all eligible contracts for this period
-            // A contract is eligible if it overlaps with the payrun period
-            // (startDate <= periodEnd) AND (endDate is null OR endDate >= periodStart)
             const eligibleContracts = await tx.employmentContract.findMany({
                 where: {
                     employee: { orgId },
@@ -38,18 +37,26 @@ class PayrunService {
                 },
                 include: { employee: true },
             });
-            if (eligibleContracts.length === 0) {
-                throw new errors_1.ValidationError('No eligible active contracts found for this period');
+            let employeeIds = eligibleContracts.map((contract) => contract.employeeId);
+            // If no active contracts, fallback to any employees in org
+            if (employeeIds.length === 0) {
+                const allEmployees = await tx.employee.findMany({
+                    where: { orgId },
+                    select: { id: true }
+                });
+                employeeIds = allEmployees.map(e => e.id);
             }
-            // 3. Lock employees into this payrun (snapshotting structure)
-            const payrunEmployeesData = eligibleContracts.map((contract) => ({
-                payrunId: payrun.id,
-                employeeId: contract.employeeId,
-                status: 'DRAFT',
-            }));
-            await tx.payrunEmployee.createMany({
-                data: payrunEmployeesData,
-            });
+            // 3. Lock employees into this payrun
+            if (employeeIds.length > 0) {
+                const payrunEmployeesData = employeeIds.map((empId) => ({
+                    payrunId: payrun.id,
+                    employeeId: empId,
+                    status: 'DRAFT',
+                }));
+                await tx.payrunEmployee.createMany({
+                    data: payrunEmployeesData,
+                });
+            }
             return tx.payrun.findUnique({
                 where: { id: payrun.id },
                 include: { _count: { select: { employees: true } } },
@@ -61,7 +68,23 @@ class PayrunService {
             where: { id, orgId },
             include: {
                 employees: {
-                    include: { employee: { include: { contracts: true } } }
+                    include: {
+                        employee: {
+                            include: {
+                                contracts: true,
+                                department: true,
+                                user: true,
+                            }
+                        }
+                    }
+                },
+                payslips: {
+                    include: {
+                        employee: {
+                            include: { department: true }
+                        },
+                        lines: true,
+                    }
                 }
             },
         });

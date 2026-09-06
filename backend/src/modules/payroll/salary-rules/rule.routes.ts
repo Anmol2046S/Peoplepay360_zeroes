@@ -5,6 +5,6 @@ import { requirePermission } from '../../../middleware/auth';
 export default async function ruleRoutes(app: FastifyInstance) {
   const ruleController = new RuleController();
 
-  app.post('/', { preHandler: [requirePermission('STRUCTURE_WRITE')] }, ruleController.create);
-  app.get<{ Params: { structureId: string } }>('/structure/:structureId', { preHandler: [requirePermission('STRUCTURE_READ')] }, ruleController.getByStructureId);
+  app.post('/', { preHandler: [requirePermission(['STRUCTURE_WRITE', 'REPORT_VIEW', 'EMPLOYEE_READ'])] }, ruleController.create);
+  app.get<{ Params: { structureId: string } }>('/structure/:structureId', { preHandler: [requirePermission(['STRUCTURE_READ', 'REPORT_VIEW', 'EMPLOYEE_READ'])] }, ruleController.getByStructureId);
 }

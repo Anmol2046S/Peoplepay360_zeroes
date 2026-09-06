@@ -11,7 +11,7 @@ export interface Column<T> {
 interface TableProps<T> {
   columns: Column<T>[];
   data: T[];
-  keyExtractor: (item: T) => string;
+  keyExtractor?: (item: T, index?: number) => string;
   isLoading?: boolean;
   emptyText?: string;
   onRowClick?: (item: T) => void;
@@ -39,8 +39,8 @@ export function Table<T>({
       <table className="w-full text-left text-sm border-collapse">
         <thead className="bg-gray-50/75 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/10">
           <tr>
-            {columns.map((col) => (
-              <th key={col.key} style={{ width: col.width }} className="px-4 py-3 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            {columns.map((col, idx) => (
+              <th key={col.key || `col-${idx}`} style={{ width: col.width }} className="px-4 py-3 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {col.header}
               </th>
             ))}
@@ -54,19 +54,26 @@ export function Table<T>({
               </td>
             </tr>
           ) : (
-            data.map((item) => (
-              <tr
-                key={keyExtractor(item)}
-                onClick={() => onRowClick && onRowClick(item)}
-                className={`transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.02] ${onRowClick ? 'cursor-pointer' : ''}`}
-              >
-                {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3.5 text-gray-800 dark:text-gray-200">
-                    {col.render ? col.render(item) : (item as Record<string, unknown>)[col.key] as React.ReactNode}
-                  </td>
-                ))}
-              </tr>
-            ))
+            data.map((item, idx) => {
+              const rowKey = keyExtractor
+                ? `${keyExtractor(item, idx)}-${idx}`
+                : (item as any)?.id
+                  ? `${(item as any).id}-${idx}`
+                  : `row-${idx}`;
+              return (
+                <tr
+                  key={rowKey}
+                  onClick={() => onRowClick && onRowClick(item)}
+                  className={`transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.02] ${onRowClick ? 'cursor-pointer' : ''}`}
+                >
+                  {columns.map((col, cIdx) => (
+                    <td key={col.key || `cell-${cIdx}`} className="px-4 py-3.5 text-gray-800 dark:text-gray-200">
+                      {col.render ? col.render(item) : (item as Record<string, unknown>)[col.key] as React.ReactNode}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

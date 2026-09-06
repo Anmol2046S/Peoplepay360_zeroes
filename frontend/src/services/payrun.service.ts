@@ -21,9 +21,13 @@ export const payrunService = {
     return data;
   },
   async createPayrun(payload: { structureId?: string; startDate?: string; endDate?: string; periodStart?: string; periodEnd?: string; name?: string; employeeIds?: string[] }): Promise<ApiResponse<Payrun>> {
+    const now = new Date();
+    const pStart = payload.periodStart || payload.startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const pEnd = payload.periodEnd || payload.endDate || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+
     const { data } = await apiClient.post<ApiResponse<Payrun>>('/payroll/payruns', {
-      periodStart: payload.periodStart || payload.startDate,
-      periodEnd: payload.periodEnd || payload.endDate,
+      periodStart: pStart,
+      periodEnd: pEnd,
       name: payload.name,
       salaryStructureId: payload.structureId,
     });
@@ -127,7 +131,11 @@ export const payrunService = {
     return data;
   },
   async updateContract(id: string, payload: Partial<Contract>): Promise<ApiResponse<Contract>> {
-    const { data } = await apiClient.put<ApiResponse<Contract>>(`/contracts/${id}`, payload);
+    const { data } = await apiClient.patch<ApiResponse<Contract>>(`/contracts/${id}`, payload);
+    return data;
+  },
+  async deleteContract(id: string): Promise<ApiResponse<any>> {
+    const { data } = await apiClient.delete<ApiResponse<any>>(`/contracts/${id}`);
     return data;
   },
 

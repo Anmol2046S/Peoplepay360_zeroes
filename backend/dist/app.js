@@ -68,13 +68,13 @@ const buildApp = async () => {
         api.get('/dev/token', async (request, reply) => {
             const query = request.query;
             const requestedRole = query?.role?.toUpperCase();
-            let targetRoleName = 'SUPER_ADMIN';
-            if (requestedRole === 'EMPLOYEE') {
-                targetRoleName = 'EMPLOYEE';
-            }
-            else if (requestedRole === 'HR') {
+            let targetRoleName = requestedRole || 'ADMIN';
+            if (requestedRole === 'SUPER_ADMIN')
+                targetRoleName = 'ADMIN';
+            if (requestedRole === 'HR')
                 targetRoleName = 'HR_MANAGER';
-            }
+            if (requestedRole === 'PAYROLL')
+                targetRoleName = 'HR_PAYROLL_MANAGER';
             let user = await db_1.prisma.user.findFirst({
                 where: { role: { name: targetRoleName } },
                 include: { role: true }

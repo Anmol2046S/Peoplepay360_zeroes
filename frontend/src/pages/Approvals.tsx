@@ -95,9 +95,9 @@ export default function Approvals() {
                 You're all caught up! No pending approvals.
               </motion.div>
             )}
-            {filteredApprovals.map((app) => (
+            {filteredApprovals.map((app, idx) => (
               <motion.div 
-                key={app.id}
+                key={`approval-${app.id}-${idx}`}
                 initial={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0, padding: 0, margin: 0 }}
                 transition={{ duration: 0.2 }}

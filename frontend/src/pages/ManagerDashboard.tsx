@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import {
   Users, CalendarOff, CheckCircle2, Clock,
-  XCircle, Check, AlertCircle, RefreshCw
+  XCircle, Check, AlertCircle
 } from 'lucide-react';
 import { timeOffService } from '../services/timeOff.service';
 import { attendanceService } from '../services/attendance.service';
@@ -17,15 +17,16 @@ export default function ManagerDashboard() {
   const { toast } = useToast();
   const [requests, setRequests] = useState<TimeOffRequest[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
+    const onSync = () => fetchData();
+    window.addEventListener('peoplepay360:livesync', onSync);
+    return () => window.removeEventListener('peoplepay360:livesync', onSync);
   }, []);
 
   const fetchData = async () => {
-    setIsLoading(true);
     try {
       const [rRes, aRes] = await Promise.all([
         timeOffService.listRequests({ status: 'PENDING' }),
@@ -62,7 +63,7 @@ export default function ManagerDashboard() {
         },
       ]);
     } finally {
-      setIsLoading(false);
+      // Done fetching
     }
   };
 
@@ -110,13 +111,6 @@ export default function ManagerDashboard() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mt-1">Department Lead Dashboard</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Manage team attendance, review pending leave requests, and approve workflows.</p>
         </div>
-        <button
-          onClick={fetchData}
-          disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-        >
-          <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} /> Refresh Sync
-        </button>
       </motion.div>
 
       {/* Metrics */}
@@ -168,10 +162,10 @@ export default function ManagerDashboard() {
             </div>
           ) : (
             <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-              {requests.map((req) => {
+              {requests.map((req, idx) => {
                 const name = req.employee ? `${req.employee.firstName} ${req.employee.lastName}` : 'Team Member';
                 return (
-                  <div key={req.id} className="p-4 flex items-center justify-between gap-4">
+                  <div key={`m-req-${req.id}-${idx}`} className="p-4 flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm text-gray-900 dark:text-white">{name}</span>
@@ -216,7 +210,7 @@ export default function ManagerDashboard() {
           </div>
           <div className="p-4 space-y-3">
             {attendances.slice(0, 5).map((att, idx) => (
-              <div key={att.id || idx} className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-white/[0.02]">
+              <div key={`m-att-${att.id || 'att'}-${idx}`} className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-white/[0.02]">
                 <div>
                   <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
                     {att.employee ? `${att.employee.firstName} ${att.employee.lastName}` : `Employee ${idx + 1}`}

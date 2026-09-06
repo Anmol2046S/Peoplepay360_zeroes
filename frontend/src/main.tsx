@@ -5,6 +5,7 @@ import App from './App.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { ToastProvider } from './contexts/ToastContext.tsx';
+import { NotificationProvider } from './contexts/NotificationContext.tsx';
 import './index.css';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -38,7 +39,9 @@ root.render(
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>
-              <App />
+              <NotificationProvider>
+                <App />
+              </NotificationProvider>
             </AuthProvider>
           </ToastProvider>
         </ThemeProvider>

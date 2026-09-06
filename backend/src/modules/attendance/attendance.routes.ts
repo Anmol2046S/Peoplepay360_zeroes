@@ -13,6 +13,10 @@ export default async function attendanceRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string } }>('/:id/check-out', { preHandler: [requirePermission(['ATTENDANCE_UPDATE', 'ATTENDANCE_SELF'])] }, attendanceController.checkOut);
   app.post<{ Params: { id: string } }>('/:id/checkout', { preHandler: [requirePermission(['ATTENDANCE_UPDATE', 'ATTENDANCE_SELF'])] }, attendanceController.checkOut);
 
+  // General check-out fallback endpoints
+  app.post('/check-out', { preHandler: [requirePermission(['ATTENDANCE_UPDATE', 'ATTENDANCE_SELF'])] }, (req: any, reply: any) => attendanceController.checkOut({ ...req, params: { id: '' } }, reply));
+  app.post('/checkout', { preHandler: [requirePermission(['ATTENDANCE_UPDATE', 'ATTENDANCE_SELF'])] }, (req: any, reply: any) => attendanceController.checkOut({ ...req, params: { id: '' } }, reply));
+
   app.get('/', { preHandler: [requirePermission(['ATTENDANCE_READ', 'ATTENDANCE_SELF'])] }, attendanceController.getAll);
   app.get<{ Params: { employeeId: string } }>('/employee/:employeeId', { preHandler: [requirePermission(['ATTENDANCE_READ', 'ATTENDANCE_SELF'])] }, attendanceController.getByEmployee);
 }
