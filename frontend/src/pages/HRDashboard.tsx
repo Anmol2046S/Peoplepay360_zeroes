@@ -340,12 +340,12 @@ const HRDashboard = () => {
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={attendanceTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }} barCategoryGap="30%">
-                  <CartesianGrid vertical={false} stroke="#f0f0f0" strokeDasharray="0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11, fontFamily: 'Inter' }} dy={6} />
-                  <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 11, fontFamily: 'Inter' }} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
-                  <Bar dataKey="present" fill="#4f46e5" radius={[5,5,0,0]} />
-                  <Bar dataKey="absent"  fill="#e5e7eb" radius={[5,5,0,0]} />
+                  <CartesianGrid vertical={false} stroke="var(--color-chart-grid)" strokeDasharray="0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-secondary)', fontSize: 11, fontFamily: 'Inter' }} dy={6} />
+                  <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fill: 'var(--color-text-secondary)', fontSize: 11, fontFamily: 'Inter' }} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-chart-hover)' }} />
+                  <Bar dataKey="present" fill="var(--color-chart-primary)" radius={[5,5,0,0]} />
+                  <Bar dataKey="absent"  fill="var(--color-chart-grid)" radius={[5,5,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

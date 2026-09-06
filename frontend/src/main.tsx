@@ -15,9 +15,9 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '2rem', color: 'red', fontFamily: 'monospace' }}>
+        <div style={{ padding: '2rem', color: 'var(--color-error)', fontFamily: 'monospace' }}>
           <h2>Something went wrong.</h2>
-          <pre style={{ background: '#f5f5f5', padding: '1rem', overflow: 'auto' }}>
+          <pre style={{ background: 'var(--color-surface-secondary)', color: 'var(--color-text-primary)', padding: '1rem', overflow: 'auto' }}>
             {this.state.error?.toString()}
             {'\n\n'}
             {this.state.error?.stack}

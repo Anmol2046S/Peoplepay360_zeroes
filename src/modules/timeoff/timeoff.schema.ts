@@ -1,7 +1,7 @@
 import z from 'zod';
 
 export const RequestTimeOffSchema = z.object({
-  employeeId: z.string().min(1),
+  employeeId: z.string().min(1).optional(),
   typeId: z.string().min(1),
   startDate: z.string().datetime().or(z.date()),
   endDate: z.string().datetime().or(z.date()),

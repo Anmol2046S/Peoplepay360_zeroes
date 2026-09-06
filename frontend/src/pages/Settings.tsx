@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Bell, Shield, Building, CreditCard } from 'lucide-react';
+import { User, Bell, Shield, Building, CreditCard, Moon, Sun } from 'lucide-react';
 import { useBreadcrumb } from '../contexts/BreadcrumbContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function Settings() {
   const { setExtraBreadcrumbs, clearExtraBreadcrumbs } = useBreadcrumb();
+  const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState('profile');
 
   const sections = [
@@ -49,6 +51,33 @@ export default function Settings() {
         <div className="md:col-span-2 space-y-6">
           <div className="panel p-6 space-y-6">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">My Profile</h2>
+
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Appearance</h3>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1">Choose the workspace theme. Your preference is saved instantly.</p>
+                </div>
+                <div className="flex rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1" role="group" aria-label="Theme preference">
+                  <button
+                    type="button"
+                    onClick={() => setTheme('light')}
+                    aria-pressed={theme === 'light'}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${theme === 'light' ? 'bg-[var(--color-primary)] text-white shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-soft)]'}`}
+                  >
+                    <Sun size={14} /> Light
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme('dark')}
+                    aria-pressed={theme === 'dark'}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${theme === 'dark' ? 'bg-[var(--color-primary)] text-white shadow-sm' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-primary-soft)]'}`}
+                  >
+                    <Moon size={14} /> Dark
+                  </button>
+                </div>
+              </div>
+            </div>
             
             <div className="flex items-center gap-5 pb-6 border-b border-gray-100 dark:border-white/[0.05]">
               <div className="w-16 h-16 rounded-full bg-indigo-500 flex items-center justify-center text-2xl font-bold text-white flex-shrink-0">

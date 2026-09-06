@@ -29,12 +29,12 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const variantClasses = {
-    primary: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-600/20',
-    secondary: 'bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/15 text-gray-800 dark:text-gray-200',
-    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-600/20',
-    success: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20',
-    warning: 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm shadow-amber-600/20',
-    ghost: 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400',
+    primary: 'theme-btn-primary',
+    secondary: 'theme-btn-secondary border',
+    danger: 'theme-btn-danger',
+    success: 'theme-btn-success',
+    warning: 'theme-btn-warning',
+    ghost: 'theme-btn-ghost',
   };
 
   return (

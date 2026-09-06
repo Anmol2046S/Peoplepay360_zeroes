@@ -2,6 +2,7 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import { requirePermission } from './middleware/auth';
 
 const buildApp = async () => {
   const app = fastify({
@@ -87,6 +88,8 @@ const buildApp = async () => {
         orgId: user.orgId,
         email: user.email,
         roleId: user.roleId,
+        employeeId: emp?.id || null,
+        role: user.role.name,
         permissions: user.role.permissions || [],
       }, secret, { expiresIn: '1d' });
 
@@ -103,7 +106,7 @@ const buildApp = async () => {
     });
 
     // Users & RBAC
-    api.get('/users', async (request, reply) => {
+    api.get('/users', { preHandler: [requirePermission('USER_MANAGE')] }, async (request, reply) => {
       const { prisma } = await import('./database/db');
       const users = await prisma.user.findMany({
         include: { role: true, employees: true },
@@ -124,7 +127,7 @@ const buildApp = async () => {
       return reply.send({ success: true, data });
     });
 
-    api.post('/users', async (request, reply) => {
+    api.post('/users', { preHandler: [requirePermission('USER_MANAGE')] }, async (request, reply) => {
       const { prisma } = await import('./database/db');
       const bcrypt = (await import('bcryptjs')).default || (await import('bcryptjs'));
       const body = request.body as any;
@@ -146,6 +149,11 @@ const buildApp = async () => {
         include: { role: true },
       });
 
+      if (body.employeeId) {
+        await prisma.employee.updateMany({ where: { orgId: org.id, userId: created.id }, data: { userId: null } });
+        await prisma.employee.update({ where: { id: body.employeeId }, data: { userId: created.id } });
+      }
+
       return reply.status(201).send({
         success: true,
         data: {
@@ -159,7 +167,63 @@ const buildApp = async () => {
       });
     });
 
-    api.post<{ Params: { id: string } }>('/users/:id/reset-password', async (request, reply) => {
+    api.patch<{ Params: { id: string } }>('/users/:id', { preHandler: [requirePermission('USER_MANAGE')] }, async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const { id } = request.params;
+      const body = request.body as any;
+      const existing = await prisma.user.findFirst({ where: { id, orgId: request.user!.orgId } });
+      if (!existing) return reply.code(404).send({ success: false, error: { message: 'User not found' } });
+
+      const role = body.role
+        ? await prisma.role.findFirst({ where: { id: body.role, OR: [{ name: body.role }, { name: body.role === 'ADMIN' ? 'SUPER_ADMIN' : body.role }] } })
+        : null;
+      const updated = await prisma.$transaction(async (tx) => {
+        if (body.employeeId !== undefined) {
+          await tx.employee.updateMany({ where: { orgId: request.user!.orgId, userId: id }, data: { userId: null } });
+          if (body.employeeId) {
+            const employee = await tx.employee.findFirst({ where: { id: body.employeeId, orgId: request.user!.orgId } });
+            if (!employee) throw new Error('Employee not found in organization');
+            await tx.employee.update({ where: { id: employee.id }, data: { userId: id } });
+          }
+        }
+        return tx.user.update({
+          where: { id },
+          data: {
+            ...(role ? { roleId: role.id } : {}),
+            ...(body.status ? { status: body.status } : {}),
+          },
+          include: { role: true, employees: true },
+        });
+      });
+      return reply.send({ success: true, data: { id: updated.id, email: updated.email, role: updated.role.name, status: updated.status, employee: updated.employees[0] || null } });
+    });
+
+    api.delete<{ Params: { id: string } }>('/users/:id', { preHandler: [requirePermission('USER_MANAGE')] }, async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const { id } = request.params;
+      if (id === request.user!.id) return reply.code(400).send({ success: false, error: { message: 'You cannot delete your own active session' } });
+      const existing = await prisma.user.findFirst({ where: { id, orgId: request.user!.orgId } });
+      if (!existing) return reply.code(404).send({ success: false, error: { message: 'User not found' } });
+      await prisma.employee.updateMany({ where: { orgId: request.user!.orgId, userId: id }, data: { userId: null } });
+      await prisma.user.delete({ where: { id } });
+      return reply.send({ success: true, data: { id } });
+    });
+
+    api.get('/roles', { preHandler: [requirePermission('ROLE_MANAGE')] }, async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const roles = await prisma.role.findMany({ orderBy: { name: 'asc' } });
+      return reply.send({ success: true, data: roles });
+    });
+
+    api.patch<{ Params: { id: string } }>('/roles/:id', { preHandler: [requirePermission('ROLE_MANAGE')] }, async (request, reply) => {
+      const { prisma } = await import('./database/db');
+      const { id } = request.params;
+      const body = request.body as any;
+      const role = await prisma.role.update({ where: { id }, data: { ...(body.name ? { name: body.name } : {}), ...(Array.isArray(body.permissions) ? { permissions: body.permissions } : {}) } });
+      return reply.send({ success: true, data: role });
+    });
+
+    api.post<{ Params: { id: string } }>('/users/:id/reset-password', { preHandler: [requirePermission('USER_MANAGE')] }, async (request, reply) => {
       const { prisma } = await import('./database/db');
       const bcrypt = (await import('bcryptjs')).default || (await import('bcryptjs'));
       const { id } = request.params;
@@ -183,6 +247,7 @@ const buildApp = async () => {
     const { default: engineRoutes } = await import('./modules/payroll/engine/engine.routes');
     const { default: reportRoutes } = await import('./modules/reports/report.routes');
     const { default: dashboardRoutes } = await import('./modules/dashboard/dashboard.routes');
+    const { default: aiRoutes } = await import('./modules/ai/ai.routes');
     
     api.register(authRoutes, { prefix: '/auth' });
     api.register(employeeRoutes, { prefix: '/employees' });
@@ -195,6 +260,7 @@ const buildApp = async () => {
     api.register(engineRoutes, { prefix: '/payroll/engine' });
     api.register(reportRoutes, { prefix: '/reports' });
     api.register(dashboardRoutes, { prefix: '/dashboard' });
+    api.register(aiRoutes, { prefix: '/ai' });
     
     api.get('/', async () => {
       return { message: 'PeoplePay360 API v1' };

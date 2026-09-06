@@ -5,6 +5,7 @@ import { Decimal } from 'decimal.js';
 
 export class TimeOffService {
   async requestTimeOff(orgId: string, input: RequestTimeOffInput) {
+    if (!input.employeeId) throw new ValidationError('Employee profile is required to request time off');
     const employee = await prisma.employee.findFirst({
       where: { id: input.employeeId, orgId },
     });
@@ -13,15 +14,27 @@ export class TimeOffService {
     const startDate = new Date(input.startDate);
     const endDate = new Date(input.endDate);
 
+    const startDay = startDate.toISOString().slice(0, 10);
+    const endDay = endDate.toISOString().slice(0, 10);
+    const todayDay = new Date().toISOString().slice(0, 10);
+
     if (startDate > endDate) {
       throw new ValidationError('Start date must be before or equal to end date');
+    }
+
+    if (startDay === endDay) {
+      throw new ValidationError('Same-day leave requests are not allowed; select a start and end date on different days');
+    }
+
+    if (startDay <= todayDay) {
+      throw new ValidationError('Leave cannot start today or in the past');
     }
 
     // A simple calculation for days (ignoring weekends for this hackathon version)
     const daysRequested = new Decimal((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
 
     // Validate allocation
-    const allocation = await prisma.timeOffAllocation.findUnique({
+    let allocation = await prisma.timeOffAllocation.findUnique({
       where: {
         employeeId_typeId: {
           employeeId: input.employeeId,
@@ -29,6 +42,22 @@ export class TimeOffService {
         },
       },
     });
+
+    if (!allocation) {
+      const typeCode = input.typeId.toUpperCase();
+      const typeName = typeCode === 'ANNUAL' ? 'Annual Leave'
+        : typeCode === 'SICK' ? 'Sick Leave'
+        : typeCode === 'CASUAL' ? 'Casual Leave'
+        : typeCode === 'PARENTAL' ? 'Parental Leave'
+        : typeCode === 'UNPAID' ? 'Unpaid Leave'
+        : input.typeId;
+      const type = await prisma.timeOffType.findFirst({ where: { orgId, name: typeName } });
+      if (type) {
+        allocation = await prisma.timeOffAllocation.findUnique({
+          where: { employeeId_typeId: { employeeId: input.employeeId, typeId: type.id } },
+        });
+      }
+    }
 
     if (!allocation) {
       throw new ValidationError('No time off allocation found for this type');
@@ -42,7 +71,7 @@ export class TimeOffService {
     return prisma.timeOffRequest.create({
       data: {
         employeeId: input.employeeId,
-        typeId: input.typeId,
+        typeId: allocation.typeId,
         startDate,
         endDate,
         status: 'PENDING',
@@ -118,8 +147,9 @@ export class TimeOffService {
     });
   }
 
-  async getAllRequests(orgId: string, status?: string) {
+  async getAllRequests(orgId: string, status?: string, employeeId?: string) {
     const where: any = { employee: { orgId } };
+    if (employeeId) where.employeeId = employeeId;
     if (status) {
       where.status = status;
     }
@@ -176,7 +206,10 @@ export class TimeOffService {
         employee: true,
         timeOffType: true,
       },
-      orderBy: { employee: { firstName: 'asc' } },
+      orderBy: [
+        { employee: { firstName: 'asc' } },
+        { timeOffType: { name: 'asc' } },
+      ],
     });
   }
 }

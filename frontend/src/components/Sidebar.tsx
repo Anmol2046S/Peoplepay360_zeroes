@@ -66,7 +66,7 @@ const Sidebar = () => {
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 h-14 px-5 border-b border-white/5 flex-shrink-0">
-        <div className="w-7 h-7 bg-indigo-500 rounded-md flex items-center justify-center flex-shrink-0">
+        <div className="w-7 h-7 bg-[var(--color-primary)] rounded-md flex items-center justify-center flex-shrink-0 shadow-lg shadow-[var(--color-primary)]/20">
           <span className="text-white font-bold text-xs leading-none">P</span>
         </div>
         <span className="text-white font-semibold text-sm tracking-tight">PeoplePay360</span>
@@ -99,8 +99,8 @@ const Sidebar = () => {
                         className={({ isActive }) => clsx(
                           'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
                           isActive
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'text-gray-300 hover:text-white hover:bg-white/[0.08]'
+                            ? 'bg-[var(--color-primary)] text-white shadow-sm'
+                            : 'text-[var(--color-sidebar-text)] hover:text-white hover:bg-white/[0.08]'
                         )}
                       >
                         {({ isActive }) => (

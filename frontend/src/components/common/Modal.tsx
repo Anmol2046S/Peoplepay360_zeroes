@@ -55,14 +55,14 @@ export const Modal: React.FC<ModalProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
-            className={`relative w-full ${sizeClasses[size]} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 dark:border-white/10 z-10`}
+            className={`relative w-full ${sizeClasses[size]} theme-surface rounded-2xl shadow-2xl overflow-hidden border z-10`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">{title}</h3>
+            <div className="flex items-center justify-between p-5 border-b border-[var(--color-border)]">
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)] tracking-tight">{title}</h3>
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                className="p-1 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-primary-soft)] transition-colors"
                 aria-label="Close modal"
               >
                 <X size={18} />
@@ -70,7 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
             <div className="p-6 max-h-[75vh] overflow-y-auto">{children}</div>
             {footer && (
-              <div className="flex items-center justify-end gap-3 p-4 bg-gray-50/50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/10">
+              <div className="flex items-center justify-end gap-3 p-4 theme-surface-secondary border-t">
                 {footer}
               </div>
             )}

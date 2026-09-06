@@ -41,8 +41,8 @@ const EmployeeDashboard = () => {
           }
         }
 
-        if (user?.id) {
-          const res = await api.get(`/attendance/employee/${user.id}`).catch(() => null);
+        if (user?.employeeId) {
+          const res = await api.get(`/attendance/employee/${user.employeeId}`).catch(() => null);
           if (res?.data?.success && res.data.data.length > 0) {
             const latest = res.data.data[0];
             if (!latest.checkOut) {
@@ -102,7 +102,7 @@ const EmployeeDashboard = () => {
         
         try {
           const res = await api.post('/attendance/check-in', {
-            employeeId: user?.id,
+            employeeId: user?.employeeId,
             date: nowStr,
             checkIn: nowStr
           });

@@ -59,6 +59,24 @@ The codebase is structured into isolated domain boundaries. This guarantees easy
    npm run dev
    ```
 
+### Local AI provider
+
+The AI feature uses an OpenAI-compatible model endpoint configured on the backend. It does not require Ollama and the model never connects directly to PostgreSQL.
+
+Set `AI_BASE_URL`, `AI_MODEL`, and optionally `AI_API_KEY` in `.env`. For local inference, point these values at a local LM Studio, llama.cpp, or vLLM server. See [LOCAL-AI.md](LOCAL-AI.md).
+
+### Hosting
+
+The backend can be hosted as a Node.js service and the frontend can be deployed as a static Vite site.
+
+- Backend environment: `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `AI_BASE_URL`, `AI_MODEL`, and optional `AI_API_KEY`.
+- Frontend environment: set `VITE_API_URL` to the public backend origin when frontend and backend use different domains. If they share an origin, leave it unset.
+- Run `npm run build` for the backend and `npm start` to serve it.
+- Run `npm run build` inside `frontend/` and publish `frontend/dist`.
+- Configure the backend CORS policy for the deployed frontend origin before production use.
+
+Do not expose `AI_API_KEY`, `DATABASE_URL`, `REDIS_URL`, or `JWT_SECRET` in frontend variables.
+
 ## Demo Flow
 1. Login with Admin credentials to get JWT.
 2. POST `/api/v1/payroll/payruns` to initialize the cycle.

@@ -32,7 +32,10 @@ export const timeOffService = {
     return data;
   },
   async createRequest(payload: Partial<TimeOffRequest>): Promise<ApiResponse<TimeOffRequest>> {
+    const savedUser = localStorage.getItem('user');
+    const user = savedUser ? JSON.parse(savedUser) : null;
     const { data } = await apiClient.post<ApiResponse<TimeOffRequest>>('/time-off/requests', {
+      employeeId: payload.employeeId || user?.employeeId,
       typeId: payload.timeOffTypeId,
       startDate: payload.startDate,
       endDate: payload.endDate,

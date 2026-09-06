@@ -26,7 +26,7 @@ export const Badge: React.FC<BadgeProps> = ({
 export const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const normalized = status ? status.toUpperCase() : '';
 
-  let variantClass = 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300';
+  let variantClass = 'bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]';
   switch (normalized) {
     case 'ACTIVE':
     case 'RUNNING':
@@ -34,14 +34,14 @@ export const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     case 'APPROVED':
     case 'PAID':
     case 'DONE':
-      variantClass = 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30';
+      variantClass = 'bg-[color-mix(in_srgb,var(--color-success)_14%,transparent)] text-[var(--color-success)] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)]';
       break;
     case 'DRAFT':
     case 'PENDING':
     case 'TO_APPROVE':
     case 'COMPUTED':
     case 'LATE':
-      variantClass = 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/30';
+      variantClass = 'bg-[color-mix(in_srgb,var(--color-warning)_16%,transparent)] text-[var(--color-warning)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)]';
       break;
     case 'EXPIRED':
     case 'CANCELLED':
@@ -50,14 +50,14 @@ export const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     case 'ABSENT':
     case 'SUSPENDED':
     case 'INACTIVE':
-      variantClass = 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30';
+      variantClass = 'bg-[color-mix(in_srgb,var(--color-error)_14%,transparent)] text-[var(--color-error)] border border-[color-mix(in_srgb,var(--color-error)_30%,transparent)]';
       break;
     case 'VALIDATED':
     case 'OVERTIME':
-      variantClass = 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30';
+      variantClass = 'bg-[color-mix(in_srgb,var(--color-info)_14%,transparent)] text-[var(--color-info)] border border-[color-mix(in_srgb,var(--color-info)_30%,transparent)]';
       break;
     default:
-      variantClass = 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/30';
+      variantClass = 'bg-[var(--color-primary-soft)] text-[var(--color-primary)] border border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)]';
       break;
   }
 

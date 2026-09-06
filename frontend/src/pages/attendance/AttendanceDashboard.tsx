@@ -424,13 +424,13 @@ export default function AttendanceDashboard() {
             <div className="p-4 h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData as any[]} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#f0f0f0" strokeDasharray="0" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} dy={8} />
-                  <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
-                  <Bar dataKey="onTime" stackId="a" fill="#10b981" radius={[0,0,4,4]} barSize={20} />
-                  <Bar dataKey="late" stackId="a" fill="#f59e0b" />
-                  <Bar dataKey="absent" stackId="a" fill="#ef4444" radius={[4,4,0,0]} />
+                  <CartesianGrid vertical={false} stroke="var(--color-chart-grid)" strokeDasharray="0" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} dy={8} />
+                  <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-chart-hover)' }} />
+                  <Bar dataKey="onTime" stackId="a" fill="var(--color-chart-success)" radius={[0,0,4,4]} barSize={20} />
+                  <Bar dataKey="late" stackId="a" fill="var(--color-chart-warning)" />
+                  <Bar dataKey="absent" stackId="a" fill="var(--color-chart-error)" radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
               

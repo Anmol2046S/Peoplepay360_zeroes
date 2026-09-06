@@ -60,7 +60,7 @@ export const payrunService = {
     return data;
   },
   getPayslipPdfUrl(id: string): string {
-    return `http://localhost:3000/api/v1/reports/payslips/${id}/pdf`;
+    return `${import.meta.env.VITE_API_URL || ''}/api/v1/reports/payslips/${id}/pdf`;
   },
 
   // Salary Structures
@@ -168,6 +168,18 @@ export const payrunService = {
   },
   async updateUser(id: string, payload: Partial<User>): Promise<ApiResponse<User>> {
     const { data } = await apiClient.patch<ApiResponse<User>>(`/users/${id}`, payload);
+    return data;
+  },
+  async listRoles(): Promise<ApiResponse<Array<{ id: string; name: string; permissions: string[] }>>> {
+    const { data } = await apiClient.get<ApiResponse<Array<{ id: string; name: string; permissions: string[] }>>>('/roles');
+    return data;
+  },
+  async updateRole(id: string, payload: { name?: string; permissions?: string[] }): Promise<ApiResponse<any>> {
+    const { data } = await apiClient.patch<ApiResponse<any>>(`/roles/${id}`, payload);
+    return data;
+  },
+  async deleteUser(id: string): Promise<ApiResponse<{ id: string }>> {
+    const { data } = await apiClient.delete<ApiResponse<{ id: string }>>(`/users/${id}`);
     return data;
   },
   async resetUserPassword(id: string, newPassword: string): Promise<ApiResponse<{ message: string }>> {

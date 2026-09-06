@@ -78,6 +78,16 @@ export default function ApplyTimeOffModal({ isOpen, onClose, onSuccess }: ApplyT
       }
     }
 
+    if (isHalfDay || new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10)) {
+      setErrorMsg('Same-day leave is not allowed. Select different start and end dates.');
+      return;
+    }
+
+    if (new Date(startDate).toISOString().slice(0, 10) <= new Date().toISOString().slice(0, 10)) {
+      setErrorMsg('Leave cannot start today or in the past.');
+      return;
+    }
+
     setSubmitting(true);
     const finalEndDate = isHalfDay ? startDate : endDate;
     const duration = isHalfDay ? 0.5 : calculatedDays;
@@ -102,12 +112,12 @@ export default function ApplyTimeOffModal({ isOpen, onClose, onSuccess }: ApplyT
 
     try {
       await api.post('/time-off/requests', {
-        employeeId: user?.id,
+        employeeId: user?.employeeId,
         typeId: leaveType,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(finalEndDate).toISOString(),
         reason: trimmedReason,
-      }).catch(() => null);
+      });
 
       // Save to local storage for instant state sync across components
       const existingStr = localStorage.getItem('peoplepay360_leave_requests');
@@ -134,9 +144,7 @@ export default function ApplyTimeOffModal({ isOpen, onClose, onSuccess }: ApplyT
       setIsHalfDay(false);
       onClose();
     } catch (err: any) {
-      toast('Time-off request submitted successfully.', 'success');
-      if (onSuccess) onSuccess(payload);
-      onClose();
+      toast('Unable to submit time-off request. Check your balance and dates.', 'error');
     } finally {
       setSubmitting(false);
     }

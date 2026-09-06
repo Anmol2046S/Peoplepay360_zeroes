@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light';
 
 interface ThemeContextType {
   theme: Theme;
+  setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
 }
 
@@ -14,7 +15,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     // Check local storage or system preference
     if (typeof window !== 'undefined') {
-      const storedTheme = localStorage.getItem('theme') as Theme;
+      const storedTheme = (localStorage.getItem('peoplepay360_theme') || localStorage.getItem('theme')) as Theme;
       if (storedTheme) {
         return storedTheme;
       }
@@ -34,7 +35,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       root.classList.remove('dark');
     }
     
-    localStorage.setItem('theme', theme);
+    localStorage.setItem('peoplepay360_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -42,7 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

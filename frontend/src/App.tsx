@@ -16,6 +16,7 @@ import ContractListPage from './pages/ContractListPage';
 import SalaryStructuresListPage from './pages/SalaryStructuresListPage';
 import TimeOffAllocationsPage from './pages/TimeOffAllocationsPage';
 import { useAuth } from './contexts/AuthContext';
+import { PeoplePay360AiWidget } from './components/PeoplePay360AiWidget';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
@@ -28,6 +29,12 @@ function ManagerOnlyRoute({ children }: { children: React.ReactNode }) {
   if (role === 'EMPLOYEE') {
     return <Navigate to="/dashboard" replace />;
   }
+  return <>{children}</>;
+}
+
+function AdminOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { role } = useAuth();
+  if (role !== 'ADMIN') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -50,7 +57,7 @@ function App() {
           <Route path="employees" element={<ManagerOnlyRoute><EmployeeList /></ManagerOnlyRoute>} />
           <Route path="employees/:id" element={<EmployeeProfile />} />
           <Route path="contracts" element={<ManagerOnlyRoute><ContractListPage /></ManagerOnlyRoute>} />
-          <Route path="users" element={<ManagerOnlyRoute><UserManagementPage /></ManagerOnlyRoute>} />
+          <Route path="users" element={<AdminOnlyRoute><UserManagementPage /></AdminOnlyRoute>} />
           
           {/* Attendance & Time Off */}
           <Route path="attendance" element={<AttendanceDashboard />} />
@@ -69,6 +76,7 @@ function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
+      <PeoplePay360AiWidget />
     </NotificationProvider>
   );
 }

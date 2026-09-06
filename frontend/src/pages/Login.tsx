@@ -33,13 +33,21 @@ const Login = () => {
 
   const handleDemoLogin = async (role: Role) => {
     setLoadingRole(role);
-    await login(role);
+    try {
+      await login(role);
+    } catch {
+      setLoadingRole(null);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await login('HR_MANAGER');
+    try {
+      await login('HR_MANAGER', { email, password });
+    } catch {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,7 +65,7 @@ const Login = () => {
         />
         <div
           className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #4f46e5, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, var(--color-primary), transparent 70%)' }}
         />
 
         <div className="relative z-10 flex flex-col h-full p-12">

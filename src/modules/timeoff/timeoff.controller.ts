@@ -12,7 +12,10 @@ export class TimeOffController {
   requestTimeOff = async (request: FastifyRequest, reply: FastifyReply) => {
     const input = RequestTimeOffSchema.parse(request.body);
     const orgId = request.user!.orgId;
-    const result = await this.timeOffService.requestTimeOff(orgId, input);
+    const result = await this.timeOffService.requestTimeOff(orgId, {
+      ...input,
+      employeeId: input.employeeId || request.user!.employeeId || undefined,
+    });
     return reply.status(201).send({ success: true, data: result });
   };
 
@@ -33,7 +36,8 @@ export class TimeOffController {
   getAllRequests = async (request: FastifyRequest, reply: FastifyReply) => {
     const orgId = request.user!.orgId;
     const status = (request.query as any)?.status;
-    const result = await this.timeOffService.getAllRequests(orgId, status);
+    const employeeId = request.user!.role === 'EMPLOYEE' ? request.user!.employeeId || undefined : undefined;
+    const result = await this.timeOffService.getAllRequests(orgId, status, employeeId);
     return reply.send({ success: true, data: result });
   };
 

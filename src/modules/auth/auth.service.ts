@@ -8,7 +8,7 @@ export class AuthService {
   async login(input: LoginInput) {
     const user = await prisma.user.findUnique({
       where: { email: input.email },
-      include: { role: true },
+      include: { role: true, employees: true },
     });
 
     if (!user || user.status !== 'ACTIVE') {
@@ -27,6 +27,8 @@ export class AuthService {
         orgId: user.orgId,
         email: user.email,
         roleId: user.roleId,
+        role: user.role.name === 'SUPER_ADMIN' ? 'ADMIN' : user.role.name,
+        employeeId: user.employees[0]?.id || null,
         permissions: user.role.permissions,
       },
       secret,
@@ -39,7 +41,9 @@ export class AuthService {
         id: user.id,
         orgId: user.orgId,
         email: user.email,
-        role: user.role.name,
+        role: user.role.name === 'SUPER_ADMIN' ? 'ADMIN' : user.role.name,
+        employeeId: user.employees[0]?.id || null,
+        name: user.employees[0] ? `${user.employees[0].firstName} ${user.employees[0].lastName}` : user.email.split('@')[0],
       },
     };
   }

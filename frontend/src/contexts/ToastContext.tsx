@@ -47,7 +47,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-              className="flex items-center gap-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-3 rounded-xl shadow-2xl shadow-black/20 pointer-events-auto min-w-[280px]"
+              className="flex items-center gap-3 bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] border border-[var(--color-border)] px-4 py-3 rounded-xl shadow-2xl pointer-events-auto min-w-[280px]"
             >
               {t.type === 'success' && <CheckCircle2 size={18} className="text-emerald-400 dark:text-emerald-500" />}
               {t.type === 'error' && <AlertCircle size={18} className="text-red-400 dark:text-red-500" />}
@@ -56,7 +56,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               <p className="text-sm font-medium flex-1">{t.message}</p>
               <button 
                 onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
-                className="text-gray-400 hover:text-white dark:hover:text-gray-900 transition-colors"
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
               >
                 <X size={15} />
               </button>

@@ -14,7 +14,7 @@ interface TabsProps {
 
 export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange }) => {
   return (
-    <div className="flex items-center gap-1 border-b border-gray-100 dark:border-white/10 pb-px">
+    <div className="flex items-center gap-1 border-b border-[var(--color-border)] pb-px">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
@@ -22,8 +22,8 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange }) => {
             key={tab.id}
             className={`px-4 py-2.5 text-xs font-semibold tracking-wide border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
               isActive
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'border-[var(--color-primary)] text-[var(--color-primary)] font-bold'
+                : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
             }`}
             onClick={() => onChange(tab.id)}
             type="button"
@@ -33,8 +33,8 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange }) => {
               <span
                 className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   isActive
-                    ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
-                    : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
+                    ? 'bg-[var(--color-primary-soft)] text-[var(--color-primary)]'
+                    : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)]'
                 }`}
               >
                 {tab.count}

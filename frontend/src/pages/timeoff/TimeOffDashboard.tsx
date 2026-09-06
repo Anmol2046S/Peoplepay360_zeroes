@@ -194,11 +194,19 @@ export default function TimeOffDashboard() {
       toast('Start date cannot be after end date.', 'error');
       return;
     }
+    if (start.toISOString().slice(0, 10) === end.toISOString().slice(0, 10)) {
+      toast('Same-day leave is not allowed. Select different start and end dates.', 'error');
+      return;
+    }
+    if (start.toISOString().slice(0, 10) <= new Date().toISOString().slice(0, 10)) {
+      toast('Leave cannot start today or in the past.', 'error');
+      return;
+    }
 
     setSubmitting(true);
     try {
       await api.post('/time-off/requests', {
-        employeeId: user?.id,
+        employeeId: user?.employeeId,
         typeId: formData.type,
         startDate: new Date(formData.startDate).toISOString(),
         endDate: new Date(formData.endDate).toISOString(),
@@ -213,7 +221,7 @@ export default function TimeOffDashboard() {
         targetRoles: ['ADMIN', 'HR_MANAGER'],
       });
     } catch (err) {
-      toast('Time-off request submitted successfully.', 'success');
+      toast('Unable to submit time-off request. Check your balance and dates.', 'error');
     } finally {
       const diffTime = Math.abs(end.getTime() - start.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;

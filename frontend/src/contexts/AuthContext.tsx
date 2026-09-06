@@ -5,6 +5,7 @@ export type Role = 'ADMIN' | 'HR_MANAGER' | 'HR_PAYROLL_USER' | 'HR_PAYROLL_MANA
 
 interface User {
   id: string;
+  employeeId?: string | null;
   name: string;
   email: string;
   jobTitle?: string;
@@ -17,7 +18,7 @@ interface AuthContextType {
   setRole: (role: Role) => void;
   user: User | null;
   isLoggedIn: boolean;
-  login: (role: Role) => void;
+  login: (role: Role, credentials?: { email: string; password: string }) => Promise<void>;
   logout: () => void;
 }
 
@@ -34,9 +35,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let parsed = saved ? JSON.parse(saved) : null;
     const token = localStorage.getItem('token');
     if (token && (!parsed || !parsed.id)) {
-      try {
+          try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        parsed = { ...(parsed || {}), id: payload.id, email: parsed?.email || payload.email };
+            parsed = {
+              ...(parsed || {}),
+              id: payload.id,
+              email: parsed?.email || payload.email,
+              employeeId: parsed?.employeeId || payload.employeeId || null,
+            };
       } catch (e) {
         console.warn('Could not decode stored JWT payload', e);
       }
@@ -53,67 +59,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const setRole = (newRole: Role) => setRoleState(newRole);
 
-  const login = useCallback(async (selectedRole: Role) => {
+  const login = useCallback(async (selectedRole: Role, credentials?: { email: string; password: string }) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/v1/dev/token?role=${selectedRole}`);
+      const apiUrl = `${import.meta.env.VITE_API_URL || ''}/api/v1`;
+      const response = credentials
+        ? await fetch(`${apiUrl}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(credentials),
+          })
+        : await fetch(`${apiUrl}/dev/token?role=${selectedRole}`);
       const data = await response.json();
       
-      if (data.token) {
-        let userId = data.user?.id;
+      const token = data.token || data.data?.token;
+      const responseUser = data.user || data.data?.user;
+      if (response.ok && token) {
+        let userId = responseUser?.id;
         if (!userId) {
           try {
-            const payload = JSON.parse(atob(data.token.split('.')[1]));
+            const payload = JSON.parse(atob(token.split('.')[1]));
             userId = payload.id;
           } catch (e) {
             console.warn('Could not decode JWT payload for userId', e);
           }
         }
-        const userObj = { ...data.user, id: userId };
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userObj = {
+          ...responseUser,
+          id: userId,
+          employeeId: responseUser?.employeeId || payload.employeeId || null,
+          roleName: responseUser?.roleName || payload.role || selectedRole,
+        };
 
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', token);
         localStorage.setItem('demo_role', selectedRole);
         localStorage.setItem('user', JSON.stringify(userObj));
         
-        setRoleState(selectedRole);
+        setRoleState((userObj.role === 'SUPER_ADMIN' ? 'ADMIN' : userObj.role || selectedRole) as Role);
         setUser(userObj);
         setIsLoggedIn(true);
         return;
       }
     } catch (err) {
-      console.error('Login backend fetch error, proceeding with demo fallback', err);
+      console.error('Login backend fetch error', err);
     }
-
-    // Fallback demo session so login button never gets stuck
-    const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtdG9zdGhiMDAwMDJmczlrdXphemUzd2kiLCJvcmdJZCI6ImNtdG9zdGg2bTAwMDBmczlraDl2ZHN5amsiLCJlbWFpbCI6ImFkbWluQHRlY2hjb3JwLmNvbSIsInJvbGVJZCI6ImNtdG9zdGg3MTAwMDFmczlrZ2hhcHZ6bTEiLCJwZXJtaXNzaW9ucyI6WyJFTVBMT1lFRV9DUkVBVEUiLCJFTVBMT1lFRV9SRUFEIiwiRU1QTE9ZRUVfVVBEQVRFIiwiQ09OVFJBQ1RfQ1JFQVRFIiwiQ09OVFJBQ1RfUkVBRCIsIkFUVEVOREFOQ0VfQ1JFQVRFIiwiQVRURU5EQU5DRV9SRUFEIiwiQVRURU5EQU5DRV9VUERBVEUiLCJUSU1FT0ZGX1JFUVVFU1QiLCJUSU1FT0ZGX0FQUFJPVkUiLCJQQVlSVU5fQ0FMQ1VMQVRFIiwiUEFZUlVOX1JFQUQiLCJQQVlSVU5fQVBQUk9WRSIsIlJFUE9SVF9WSUVXIl0sImlhdCI6MTc4ODYzODIyNSwiZXhwIjoxNzg4NzI0NjI1fQ.8UTOD7BPtfEex2jubwVEW2X4ipQSUWRi9wD8354wmcE';
-    
-    const roleNames: Record<Role, string> = {
-      ADMIN: 'System Admin',
-      HR_MANAGER: 'HR Manager',
-      HR_PAYROLL_USER: 'HR Payroll User',
-      HR_PAYROLL_MANAGER: 'HR Payroll Manager',
-      EMPLOYEE: 'Employee',
-    };
-
-    const roleEmails: Record<Role, string> = {
-      ADMIN: 'admin@techcorp.com',
-      HR_MANAGER: 'hrmanager@techcorp.com',
-      HR_PAYROLL_USER: 'payrolluser@techcorp.com',
-      HR_PAYROLL_MANAGER: 'payrollmgr@techcorp.com',
-      EMPLOYEE: 'employee@techcorp.com',
-    };
-
-    const demoUser = {
-      id: 'cmtosthb00002fs9kuzaze3wi',
-      email: roleEmails[selectedRole] || 'user@techcorp.com',
-      name: roleNames[selectedRole] || 'User',
-    };
-
-    localStorage.setItem('token', demoToken);
-    localStorage.setItem('demo_role', selectedRole);
-    localStorage.setItem('user', JSON.stringify(demoUser));
-    setRoleState(selectedRole);
-    setUser(demoUser);
-    setIsLoggedIn(true);
+    localStorage.removeItem('token');
+    localStorage.removeItem('demo_role');
+    localStorage.removeItem('user');
+    setUser(null);
+    setIsLoggedIn(false);
+    throw new Error('Unable to sign in. Check the backend and credentials.');
   }, []);
 
   const logout = useCallback(() => {

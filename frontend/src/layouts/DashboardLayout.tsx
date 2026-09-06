@@ -9,7 +9,7 @@ const DashboardLayoutContent = () => {
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
+    <div className="flex h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar />
